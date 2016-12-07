@@ -12,11 +12,14 @@ Source0:	%{name}-%{version}.tar.gz
 ExclusiveArch:	x86_64
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
+%define		 _udevdir /usr/lib/udev/rules.d/
 %define		debug_package %{nil}
+
 %define		unit %{name}.service
+%define		rule 80-enclosure-%{name}.rules
+%define		ledctl %{name}-ledctl
 %define		user %{name}
 %define		group %{name}
-
 
 #BuildRequires:	# Go 1.0.3
 Requires:		zfs
@@ -46,8 +49,13 @@ make
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 
+%__install -p -m 755 etc/%{ledctl} ${RPM_BUILD_ROOT}%{_sbindir}/%{ledctl}
+
 %__mkdir_p ${RPM_BUILD_ROOT}%{_unitdir}
 %__install -p -m 755 etc/%{unit} ${RPM_BUILD_ROOT}%{_unitdir}/%{unit}
+
+%__mkdir_p ${RPM_BUILD_ROOT}%{_udevdir}
+%__install -p -m 644 etc/%{rule} ${RPM_BUILD_ROOT}%{_udevdir}/%{rule}
 
 %__mkdir_p -m 755 ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d
 %__install -p -m 644 etc/logrotate.conf ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}
@@ -66,6 +74,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/*
 %{_datadir}/%{name}/
 %config(noreplace) %{_unitdir}/%{unit}
+%config(noreplace) %{_udevdir}/%{rule}
 %config(noreplace) %{_sysconfdir}/zfs/*.conf
 %config(noreplace) %{_sysconfdir}/logrotate.d/*
 %dir %attr(0755, %{name}, %{name}) %{_var}/log/%{name}

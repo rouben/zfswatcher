@@ -1,0 +1,6 @@
+#
+# Correct /sys/class/enclosure permissions such that members of the
+# zfswatcher group may control the enclosure.
+#
+SUBSYSTEM=="enclosure", PROGRAM="/bin/sh -c '/bin/chown -R root:zfswatcher /sys/%p'"
+SUBSYSTEM=="enclosure", PROGRAM="/bin/sh -c '/bin/chmod -R ug+rw /sys/%p'"

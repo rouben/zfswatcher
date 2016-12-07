@@ -122,8 +122,8 @@ Some notes:
   utility `ledctl` (part of ledmon package) is required for this
   functionality.
 
-- Logging to file `/var/log/zfswatcher.log` and local syslog daemon is enabled
-  by default.
+- Logging to file `/var/log/zfswatcher/zfswatcher.log` and local syslog
+  daemon is enabled by default.
 
 - E-mail notifications are disabled by default.
 

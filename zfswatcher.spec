@@ -12,12 +12,19 @@ Source0:	%{name}-%{version}.tar.gz
 ExclusiveArch:	x86_64
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
+%define		debug_package %{nil}
+%define		unit %{name}.service
+%define		user %{name}
+%define		group %{name}
+
+
 #BuildRequires:	# Go 1.0.3
 Requires:		zfs
-Requires(post):		chkconfig
-Requires(preun):	chkconfig
-Requires(preun):	initscripts
-Requires(postun):	initscripts
+Requires(pre):		/usr/sbin/useradd, /usr/sbin/groupadd, /usr/bin/getent
+Requires(postun):	/usr/sbin/userdel, /usr/sbin/groupdel
+Requires(post):		systemd
+Requires(preun):	systemd
+Requires(postun):	systemd
 
 %description
 Zfswatcher is ZFS pool monitoring and notification daemon
@@ -39,11 +46,13 @@ make
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 
-%__mkdir_p ${RPM_BUILD_ROOT}%{_initddir}
-%__install -p -m 755 etc/redhat-startup.sh ${RPM_BUILD_ROOT}%{_initddir}/%{name}
+%__mkdir_p ${RPM_BUILD_ROOT}%{_unitdir}
+%__install -p -m 755 etc/%{unit} ${RPM_BUILD_ROOT}%{_unitdir}/%{unit}
 
 %__mkdir_p -m 755 ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d
 %__install -p -m 644 etc/logrotate.conf ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}
+
+%__mkdir_p -m 755 ${RPM_BUILD_ROOT}%{_var}/log/%{name}
 
 
 %clean
@@ -56,26 +65,26 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/*
 %{_mandir}/man8/*
 %{_datadir}/%{name}/
-%{_initddir}/%{name}
+%config(noreplace) %{_unitdir}/%{unit}
 %config(noreplace) %{_sysconfdir}/zfs/*.conf
 %config(noreplace) %{_sysconfdir}/logrotate.d/*
+%dir %attr(0755, %{name}, %{name}) %{_var}/log/%{name}
+
+
+%pre
+/usr/bin/getent group %{group} || /usr/sbin/groupadd -r %{group}
+/usr/bin/getent passwd %{user} || /usr/sbin/useradd -r -d %{_sbindir} -s /sbin/nologin -g %{group} %{user}
 
 
 %post
-# This adds the proper /etc/rc*.d links for the script
-/sbin/chkconfig --add zfswatcher
+%systemd_post %{unit}
 
 
 %preun
-if [ $1 -eq 0 ] ; then
-	/sbin/service zfswatcher stop >/dev/null 2>&1
-	/sbin/chkconfig --del zfswatcher
-fi
+%systemd_preun %{unit}
 
 
 %postun
-if [ "$1" -ge "1" ] ; then
-	/sbin/service zfswatcher condrestart >/dev/null 2>&1 || :
-fi
-
-
+%systemd_postun %{unit}
+/usr/sbin/userdel %{name}
+/usr/sbin/groupdel %{name}

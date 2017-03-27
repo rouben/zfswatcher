@@ -107,6 +107,7 @@ type cfgType struct {
 		Keyfile              string
 		Templatedir          string
 		Resourcedir          string
+		Rootdir              string
 		Severitycssclassmap  severityToWwwClassMap
 		Poolstatecssclassmap stringToStringMap
 		Devstatecssclassmap  stringToStringMap

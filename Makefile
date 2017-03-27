@@ -23,7 +23,7 @@
 SHELL	= /bin/sh
 
 # Go tool and library path:
-GO	= /usr/local/go/bin/go
+GO	= /usr/bin/go
 GOPATH	= `pwd`/golibs
 
 # Installation directories:

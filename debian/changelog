@@ -1,3 +1,9 @@
+zfswatcher (0.03-3) unstable; urgency=low
+
+  * Added "zfs-dkms" as an alternative dependency.
+
+ -- Simon <skrzepto@users.noreply.github.com>  Wed, 29 Mar 2017 15:23:10 -0500
+
 zfswatcher (0.03-2) unstable; urgency=low
 
   * Added "debian-zfs" as an alternative dependency.

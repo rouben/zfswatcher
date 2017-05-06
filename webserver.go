@@ -69,20 +69,20 @@ func webServer() {
 
 	authenticator := auth.NewBasicAuthenticator("zfswatcher", getUserSecret)
 
-	http.Handle("/resources/",
-		http.StripPrefix("/resources",
+	http.Handle(cfg.Www.Rootdir + "/resources/",
+		http.StripPrefix(cfg.Www.Rootdir + "/resources",
 			noDirListing(
 				authenticator.WrapHandler(
 					http.FileServer(
 						http.Dir(cfg.Www.Resourcedir))))))
 
-	http.HandleFunc("/", authenticator.Wrap(dashboardHandler))
-	http.HandleFunc("/status/", authenticator.Wrap(statusHandler))
-	http.HandleFunc("/usage/", authenticator.Wrap(usageHandler))
-	http.HandleFunc("/statistics/", authenticator.Wrap(statisticsHandler))
-	http.HandleFunc("/logs/", authenticator.Wrap(logsHandler))
-	http.HandleFunc("/about/", authenticator.Wrap(aboutHandler))
-	http.HandleFunc("/locate/", authenticator.Wrap(locateHandler))
+	http.HandleFunc(cfg.Www.Rootdir + "/", authenticator.Wrap(dashboardHandler))
+	http.HandleFunc(cfg.Www.Rootdir + "/status/", authenticator.Wrap(statusHandler))
+	http.HandleFunc(cfg.Www.Rootdir + "/usage/", authenticator.Wrap(usageHandler))
+	http.HandleFunc(cfg.Www.Rootdir + "/statistics/", authenticator.Wrap(statisticsHandler))
+	http.HandleFunc(cfg.Www.Rootdir + "/logs/", authenticator.Wrap(logsHandler))
+	http.HandleFunc(cfg.Www.Rootdir + "/about/", authenticator.Wrap(aboutHandler))
+	http.HandleFunc(cfg.Www.Rootdir + "/locate/", authenticator.Wrap(locateHandler))
 
 	if cfg.Www.Certfile != "" && cfg.Www.Keyfile != "" {
 		err = http.ListenAndServeTLS(cfg.Www.Bind, cfg.Www.Certfile, cfg.Www.Keyfile, nil)

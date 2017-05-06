@@ -61,6 +61,7 @@ type webNav struct {
 	Statistics bool
 	Logs       bool
 	About      bool
+	Root	   string
 }
 
 type webSubNav struct {
@@ -104,6 +105,7 @@ type poolStatusWeb struct {
 	Avail        int64
 	AvailPercent int
 	Total        int64
+	Root         string
 }
 
 type dashboardWeb struct {
@@ -166,6 +168,7 @@ func makePoolStatusWeb(pool *PoolType, usage map[string]*PoolUsageType) *poolSta
 		See:        pool.see,
 		Scan:       pool.scan,
 		Errors:     pool.errors,
+		Root:       cfg.Www.Rootdir,
 	}
 	statusWeb.Avail = -1
 	statusWeb.Used = -1
@@ -210,9 +213,9 @@ func makePoolStatusWeb(pool *PoolType, usage map[string]*PoolUsageType) *poolSta
 }
 
 func statusHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
-	wn := webNav{PoolStatus: true}
+	wn := webNav{PoolStatus: true, Root: cfg.Www.Rootdir}
 
-	pool := r.URL.Path[len("/status/"):]
+	pool := r.URL.Path[len(cfg.Www.Rootdir + "/status/"):]
 
 	if !legalPoolName(pool) && !(pool == "") {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
@@ -244,7 +247,7 @@ func statusHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 		}
 	}
 	if pool == "" {
-		http.Redirect(w, &r.Request, "/status/"+subnav[0].Name, http.StatusSeeOther)
+		http.Redirect(w, &r.Request, cfg.Www.Rootdir + "/status/"+subnav[0].Name, http.StatusSeeOther)
 		return
 	}
 	if match == -1 {
@@ -271,9 +274,9 @@ func statusHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 }
 
 func usageHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
-	wn := webNav{} // not available in menu
+	wn := webNav{Root: cfg.Www.Rootdir} // not available in menu
 
-	pool := r.URL.Path[len("/usage/"):]
+	pool := r.URL.Path[len(cfg.Www.Rootdir + "/usage/"):]
 
 	if pool == "" || !legalPoolName(pool) {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
@@ -300,7 +303,7 @@ func usageHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 }
 
 func dashboardHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
-	wn := webNav{Dashboard: true}
+	wn := webNav{Dashboard: true, Root: cfg.Www.Rootdir}
 
 	uptime, err := getSystemUptime()
 	if err != nil {
@@ -338,7 +341,7 @@ func dashboardHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 }
 
 func statisticsHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
-	wn := webNav{Statistics: true}
+	wn := webNav{Statistics: true, Root: cfg.Www.Rootdir}
 	err := templates.ExecuteTemplate(w, "statistics.html", &webData{Nav: wn})
 	if err != nil {
 		notify.Printf(notifier.ERR, "error executing template: %s", err)
@@ -347,7 +350,7 @@ func statisticsHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 }
 
 func logsHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
-	wn := webNav{Logs: true}
+	wn := webNav{Logs: true, Root: cfg.Www.Rootdir}
 	wwwLogMutex.RLock()
 	err := templates.ExecuteTemplate(w, "logs.html", &webData{Nav: wn, Data: wwwLogBuffer})
 	wwwLogMutex.RUnlock()
@@ -358,7 +361,7 @@ func logsHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 }
 
 func aboutHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
-	wn := webNav{About: true}
+	wn := webNav{About: true, Root: cfg.Www.Rootdir}
 	err := templates.ExecuteTemplate(w, "about.html",
 		&webData{Nav: wn,
 			Data: map[string]string{

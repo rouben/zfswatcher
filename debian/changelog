@@ -1,3 +1,10 @@
+zfswatcher (0.04-1) unstable; urgency=low
+
+  * New version 0.04.
+  * Added the ability to set the root directory in config.
+
+ -- Simon <skrzepto@users.noreply.github.com>  Wed, 29 Mar 2017 15:23:10 -0500
+
 zfswatcher (0.03-3) unstable; urgency=low
 
   * Added "zfs-dkms" as an alternative dependency.

@@ -32,7 +32,7 @@
 				<td style="padding-left: {{ .Indent }}em">{{ .Name }}</td>
 				<td>
 				{{ if .EnableLed }}
-					<form action="/locate/" method="post" style="margin-bottom: -1px; margin-top: -1px">
+				<form action="{{ .Root }}/locate/" method="post" style="margin-bottom: -1px; margin-top: -1px">
 					{{ if .Locate }}
 					<input type="hidden" name="dev" value="{{ .Name }}">
 					<input type="hidden" name="state" value="off">

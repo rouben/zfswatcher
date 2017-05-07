@@ -24,7 +24,7 @@
 		<tbody>
 			{{ range .Pools }}
 			<tr>
-				<td><a href="/status/{{ .Name }}">{{ .Name }}</a></td>
+				<td><a href="{{ .Root }}/status/{{ .Name }}">{{ .Name }}</a></td>
 				<td class="{{ .StateClass }}">{{ .State }}</td>
 				<td style="text-align: right">{{ nicenumber .Total }}</td>
 				<td style="text-align: right">{{ nicenumber .Used }}</td>
@@ -32,7 +32,7 @@
 				<td style="text-align: right">{{ nicenumber .Avail }}</td>
 				<td style="text-align: right">{{ .AvailPercent }}%</td>
 				<td style="padding-left: 2em">
-					<a href="/usage/{{ .Name }}">
+					<a href="{{ .Root }}/usage/{{ .Name }}">
 					<div class="progress progress-zfswatcher-dashboard">
 					{{ if or .UsedPercent .AvailPercent }}
 						<div class="bar {{ .UsedClass }}" style="width: {{ .UsedPercent }}%"></div>

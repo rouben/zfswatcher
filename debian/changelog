@@ -1,3 +1,10 @@
+zfswatcher (0.4.1-1) unstable; urgency=medium
+
+  * New version 0.04.1.
+  * Fixed regression bug in templates that would break links.
+
+ -- Rouben <rouben@rouben.net>  Sat, 06 May 2017 20:32:59 -0400
+
 zfswatcher (0.04-1) unstable; urgency=low
 
   * New version 0.04.

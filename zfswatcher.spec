@@ -6,7 +6,7 @@ Summary:	ZFS pool monitoring and notification daemon
 Group:		Applications/System
 License:	GPLv3+
 Vendor:		Damicon Kraa Oy <http://www.damicon.fi/>
-Packager:	Janne Snabb <snabb@epipe.com>
+Packager:	Rouben <rouben@rouben.net>
 URL:		http://zfswatcher.damicon.fi/
 Source0:	%{name}-%{version}.tar.gz
 ExclusiveArch:	x86_64

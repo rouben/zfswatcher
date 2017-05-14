@@ -1,0 +1,103 @@
+#!/bin/bash
+#
+# This script is designed to emulate a subset of the functionality of
+# the ledctl(8) utility.  This includes accepting approximately the
+# same command line option formatting which allows it to be used as a
+# drop in replacement.
+#
+# Unlike ledctl(8) this script depends on the SES functionality provided
+# through sysfs.  This allows standard filesystem permissions to be used
+# to control access.  It is designed to be used in conjection with the
+# 80-enclosure-zfswatcher.rules which ensures the 'fault' and 'locate'
+# sysfs entries are writable by the zfswatcher group.
+#
+# Set the locate beacon:
+#   zfswatcher-ledctl locate=/dev/disk/by-vdev/A1
+#
+# Set the fault beacon:
+#   zfswatcher-ledctl failure=/dev/disk/by-vdev/A1
+#
+
+function check_file
+{
+	local file="$1"
+
+	if [ -e "$file" ]; then
+		if [ ! -w "$file" ]; then
+			echo "Permission denied: '$file'"
+			return 1
+		fi
+	else
+			echo "Missing file: '$file'"
+			return 1
+	fi
+
+	return 0
+}
+
+function set_file
+{
+	local file="$1"
+	local value="$2"
+
+	current=$(cat "$file")
+	if [ "$current" != "$value" ]; then
+		echo "$value" >"$file" 2>/dev/null
+
+		current=$(cat "$file")
+		if [ "$current" != "$value" ]; then
+			echo "Set '$file = $value' FAIL"
+		else
+			echo "Set '$file = $value' SUCCESS"
+		fi
+	fi
+}
+
+for arg in "$@"; do
+	key=$(echo "$arg" | cut -f1 -d'=')
+	value=$(echo "$arg" | cut -f2 -d'=')
+
+	# Determine the underlying device.
+	realdev=$(basename $(realpath $value))
+	if [[ "$realdev" == dm* ]]; then
+		basedev=$(ls -1U /sys/block/$realdev/slaves | head -1)
+	else
+		basedev="$realdev"
+	fi
+
+	# Determine the attached enclosure.
+	encdev=$(ls -1U /sys/block/$basedev/device/ | grep -m1 enclosure_device)
+	if [ -z "$encdev" ]; then
+		echo "Missing enclosure link for device: $basedev"
+		continue
+	fi
+
+	slotpath="/sys/block/$basedev/device/$encdev"
+	faultfile="$slotpath/fault"
+	locatefile="$slotpath/locate"
+
+	case "$key" in
+	"normal")
+		check_file "$faultfile" && set_file "$faultfile" 0
+		check_file "$locatefile" && set_file "$locatefile" 0
+		;;
+	"failure")
+		check_file "$faultfile" && set_file "$faultfile" 1
+		;;
+	"failure_off")
+		check_file "$faultfile" && set_file "$faultfile" 0
+		;;
+	"locate")
+		check_file "$locatefile" && set_file "$locatefile" 1
+		;;
+	"locate_off")
+		check_file "$locatefile" && set_file "$locatefile" 0
+		;;
+	*)
+		echo "Unknown pattern name: $key=$value"
+		continue
+		;;
+	esac
+done
+
+exit 0

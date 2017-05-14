@@ -5,10 +5,14 @@
 [Unit]
 Description=ZFS monitoring daemon
 Documentation=man:zfswatcher(8) http://zfswatcher.damicon.fi/
+After=zfs-import-cache.service
+After=zfs-import-scan.service
 
 [Service]
 Type=simple
 ExecStart=/usr/sbin/zfswatcher
+User=zfswatcher
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target

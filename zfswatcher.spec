@@ -16,12 +16,14 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 %define		debug_package %{nil}
 
 %define		unit %{name}.service
+%define		_unitdir /lib/systemd/system/
 %define		rule 80-enclosure-%{name}.rules
 %define		ledctl %{name}-ledctl
 %define		user %{name}
 %define		group %{name}
 
 #BuildRequires:	# Go 1.0.3
+#BuildRequires:		systemd
 Requires:		zfs
 Requires(pre):		/usr/sbin/useradd, /usr/sbin/groupadd, /usr/bin/getent
 Requires(postun):	/usr/sbin/userdel, /usr/sbin/groupdel

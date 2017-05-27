@@ -69,13 +69,6 @@ func webServer() {
 
 	authenticator := auth.NewBasicAuthenticator("zfswatcher", getUserSecret)
 
-	http.Handle(cfg.Www.Rootdir + "/resources/",
-		http.StripPrefix(cfg.Www.Rootdir + "/resources",
-			noDirListing(
-				authenticator.WrapHandler(
-					http.FileServer(
-						http.Dir(cfg.Www.Resourcedir))))))
-
 	http.HandleFunc(cfg.Www.Rootdir + "/", authenticator.Wrap(dashboardHandler))
 	http.HandleFunc(cfg.Www.Rootdir + "/status/", authenticator.Wrap(statusHandler))
 	http.HandleFunc(cfg.Www.Rootdir + "/usage/", authenticator.Wrap(usageHandler))

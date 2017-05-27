@@ -22,7 +22,7 @@
 package main
 
 import (
-	"code.google.com/p/gcfg"
+	"gopkg.in/gcfg.v1"
 	"errors"
 	"fmt"
 	"github.com/damicon/zfswatcher/notifier"

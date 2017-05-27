@@ -46,6 +46,20 @@
 			{{ end }}
 		</tbody>
 	</table>
+	{{ if .ChassisEnable }}
+		{{ if .Chassis45drives15 }}
+			<h3 align="center">45Drives S15</h3>
+		{{ end }}
+		{{ if .Chassis45drives30 }}
+			<h3 align="center">45Drives Q30</h3>
+		{{ end }}
+		{{ if .Chassis45drives45 }}
+			<h3 align="center">45Drives S45</h3>
+		{{ end }}
+		{{ if .Chassis45drives60 }}
+			<h3 align="center">45Drives XL60</h3>
+		{{ end }}
+	{{ end }}
 	{{ else }}
 	<div class="alert alert-info">
 		There are no pools.

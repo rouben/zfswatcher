@@ -113,6 +113,11 @@ type dashboardWeb struct {
 	ZfswatcherUptime string
 	SysLoadaverage   [3]float32
 	Pools            []*poolStatusWeb
+	ChassisEnable		 bool
+	Chassis45drives15 bool
+	Chassis45drives30 bool
+	Chassis45drives45 bool
+	Chassis45drives60 bool
 }
 
 type logMsgWeb struct {
@@ -331,6 +336,11 @@ func dashboardHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 		ZfswatcherUptime: myDurationString(time.Since(startTime)),
 		SysLoadaverage:   loadavg,
 		Pools:            ws,
+		ChassisEnable:		cfg.Chassis.Enable,
+		Chassis45drives15:	cfg.Chassis.Chassis45drives15,
+		Chassis45drives30:	cfg.Chassis.Chassis45drives30,
+		Chassis45drives45:	cfg.Chassis.Chassis45drives45,
+		Chassis45drives60:	cfg.Chassis.Chassis45drives60,
 	}
 
 	err = templates.ExecuteTemplate(w, "dashboard.html", &webData{Nav: wn, Data: d})

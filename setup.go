@@ -117,6 +117,13 @@ type cfgType struct {
 		Enable   bool
 		Password string
 	}
+	Chassis struct {
+		Enable							bool
+		Chassis45drives15		bool
+		Chassis45drives30		bool
+		Chassis45drives45		bool
+		Chassis45drives60		bool
+	}
 }
 
 type stringToStringMap map[string]string
@@ -197,7 +204,7 @@ func (psmapp *percentageToSeverityMap) Scan(state fmt.ScanState, verb rune) erro
 	return nil
 }
 
-// Get severity level based on used percentage level. 
+// Get severity level based on used percentage level.
 // Returns notifier.SEVERITY_NONE and ok = false if the percentage
 // does not reach any listed level.
 func (psmapp *percentageToSeverityMap) GetByPercentage(used int) (severity notifier.Severity, ok bool) {

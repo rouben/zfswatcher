@@ -82,6 +82,7 @@ func webServer() {
 	http.HandleFunc(cfg.Www.Rootdir + "/logs/", authenticator.Wrap(logsHandler))
 	http.HandleFunc(cfg.Www.Rootdir + "/about/", authenticator.Wrap(aboutHandler))
 	http.HandleFunc(cfg.Www.Rootdir + "/locate/", authenticator.Wrap(locateHandler))
+	http.HandleFunc(cfg.Www.Rootdir + "/enclosure/", authenticator.Wrap(enclosureHandler))
 
 	if cfg.Www.Certfile != "" && cfg.Www.Keyfile != "" {
 		err = http.ListenAndServeTLS(cfg.Www.Bind, cfg.Www.Certfile, cfg.Www.Keyfile, nil)

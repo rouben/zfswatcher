@@ -61,6 +61,7 @@ type webNav struct {
 	Statistics bool
 	Logs       bool
 	About      bool
+	Enclosure	 bool
 	Root	   string
 }
 
@@ -113,11 +114,7 @@ type dashboardWeb struct {
 	ZfswatcherUptime string
 	SysLoadaverage   [3]float32
 	Pools            []*poolStatusWeb
-	ChassisEnable		 bool
-	Chassis45drives15 bool
-	Chassis45drives30 bool
-	Chassis45drives45 bool
-	Chassis45drives60 bool
+
 }
 
 type logMsgWeb struct {
@@ -126,6 +123,14 @@ type logMsgWeb struct {
 	Class      string
 	Text       string
 	Attachment string
+}
+
+type enclosureWeb struct {
+	ChassisEnable			bool
+	Chassis45drives15 bool
+	Chassis45drives30 bool
+	Chassis45drives45 bool
+	Chassis45drives60 bool
 }
 
 var (
@@ -336,11 +341,7 @@ func dashboardHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 		ZfswatcherUptime: myDurationString(time.Since(startTime)),
 		SysLoadaverage:   loadavg,
 		Pools:            ws,
-		ChassisEnable:		cfg.Chassis.Enable,
-		Chassis45drives15:	cfg.Chassis.Chassis45drives15,
-		Chassis45drives30:	cfg.Chassis.Chassis45drives30,
-		Chassis45drives45:	cfg.Chassis.Chassis45drives45,
-		Chassis45drives60:	cfg.Chassis.Chassis45drives60,
+
 	}
 
 	err = templates.ExecuteTemplate(w, "dashboard.html", &webData{Nav: wn, Data: d})
@@ -404,4 +405,22 @@ func locateHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 	http.Redirect(w, &r.Request, r.Referer(), http.StatusSeeOther)
 }
 
+
+func enclosureHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
+	wn := webNav{Enclosure: true, Root: cfg.Www.Rootdir}
+
+	ewd := &enclosureWeb{
+		ChassisEnable:		  cfg.Chassis.Enable,
+		Chassis45drives15:	cfg.Chassis.Chassis45drives15,
+		Chassis45drives30:	cfg.Chassis.Chassis45drives30,
+		Chassis45drives45:	cfg.Chassis.Chassis45drives45,
+		Chassis45drives60:	cfg.Chassis.Chassis45drives60,
+	}
+
+	err := templates.ExecuteTemplate(w, "enclosure.html", &webData{Nav: wn, Data: ewd})
+	if err != nil {
+		notify.Printf(notifier.ERR, "error executing template: %s", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
 // eof

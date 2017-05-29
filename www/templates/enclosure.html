@@ -12,40 +12,51 @@
     {{ end }}
     {{ if .Chassis45drives45 }}
       <h3 align="center">45Drives S45</h3>
+      {{ if .Pools }}
+      <table class="table table-zfswatcher-dashboard table-hover">
+        <thead>
+          <tr>
+            <th style="width: 5%"></th>
+            <th style="width: 5%"></th>
+            <th style="width: 5%"></th>
+            <th style="width: 5%"></th>
+            <th style="width: 5%"></th>
+            <th style="width: 5%"></th>
+            <th style="width: 5%"></th>
+            <th style="width: 5%"></th>
+            <th style="width: 5%"></th>
+            <th style="width: 5%"></th>
+            <th style="width: 5%"></th>
+            <th style="width: 5%"></th>
+            <th style="width: 5%"></th>
+            <th style="width: 5%"></th>
+            <th style="width: 5%"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{ range .Pools }}
+          <tr>
+          {{ range .Devs }}
+            <td>{{ .Name }}{{ .State }}</td>
+          {{ end }}
+        </tr>
+          {{ end }}
+        </tbody>
+      </table>
+      {{ else }}
+      <div class="alert alert-info">
+        There are no pools.
+      </div>
+      {{ end }}
+      {{ else }}
+        <div class="alert alert-error">
+          Enclosure detection has not been enabled in config
+        </div>
+      {{ end }}
     {{ end }}
     {{ if .Chassis45drives60 }}
       <h3 align="center">45Drives XL60</h3>
     {{ end }}
-	{{ if .Pools }}
-	<table class="table table-zfswatcher-dashboard table-hover">
-		<thead>
-			<tr>
-				<th style="width: 10%">Pool</th>
-				<th style="width: 10%">State</th>
-				<th style="width: 31%"></th>
-			</tr>
-		</thead>
-		<tbody>
-      {{ range .Pools }}
-      {{ range .Devs }}
-			<tr>
-				<td>{{ .Name }}</td>
-				<td>{{ .State }}</td>
-				<td></td>
-			</tr>
-			{{ end }}
-			{{ end }}
-		</tbody>
-	</table>
-	{{ else }}
-	<div class="alert alert-info">
-		There are no pools.
-	</div>
-	{{ end }}
-  {{ else }}
-    <div class="alert alert-error">
-      Enclosure detection has not been enabled in config
-    </div>
-  {{ end }}
+
 {{ end }}
 {{ template "footer.html" .Nav }}

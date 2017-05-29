@@ -1,19 +1,51 @@
 {{ template "header.html" .Nav }}
-
 {{ with .Data }}
-
-  {{ if .Chassis45drives15 }}
-    <h3 align="center">45Drives S15</h3>
+  {{ if .ChassisEnable }}
+    {{ if .Chassis45drives15 }}
+      <h3 align="center">45Drives AV15</h3>
+    {{ end }}
+    {{ if .Chassis45drives30 }}
+      <h3 align="center">45Drives Q30</h3>
+    {{ end }}
+    {{ if .Chassis45drives45l }}
+      <h3 align="center">45Drives S45 lite</h3>
+    {{ end }}
+    {{ if .Chassis45drives45 }}
+      <h3 align="center">45Drives S45</h3>
+    {{ end }}
+    {{ if .Chassis45drives60 }}
+      <h3 align="center">45Drives XL60</h3>
+    {{ end }}
+	{{ if .Pools }}
+	<table class="table table-zfswatcher-dashboard table-hover">
+		<thead>
+			<tr>
+				<th style="width: 10%">Pool</th>
+				<th style="width: 10%">State</th>
+				<th style="width: 31%"></th>
+			</tr>
+		</thead>
+		<tbody>
+      {{ range .Pools }}
+      {{ range .Devs }}
+			<tr>
+				<td>{{ .Name }}</td>
+				<td>{{ .State }}</td>
+				<td></td>
+			</tr>
+			{{ end }}
+			{{ end }}
+		</tbody>
+	</table>
+	{{ else }}
+	<div class="alert alert-info">
+		There are no pools.
+	</div>
+	{{ end }}
+  {{ else }}
+    <div class="alert alert-error">
+      Enclosure detection has not been enabled in config
+    </div>
   {{ end }}
-  {{ if .Chassis45drives30 }}
-    <h3 align="center">45Drives Q30</h3>
-  {{ end }}
-  {{ if .Chassis45drives45 }}
-    <h3 align="center">45Drives S45</h3>
-  {{ end }}
-  {{ if .Chassis45drives60 }}
-    <h3 align="center">45Drives XL60</h3>
-  {{ end }}
-
 {{ end }}
 {{ template "footer.html" .Nav }}

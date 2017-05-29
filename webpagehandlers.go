@@ -129,8 +129,10 @@ type enclosureWeb struct {
 	ChassisEnable			bool
 	Chassis45drives15 bool
 	Chassis45drives30 bool
+	Chassis45drives45l bool
 	Chassis45drives45 bool
 	Chassis45drives60 bool
+	Pools            []*poolStatusWeb
 }
 
 var (
@@ -409,13 +411,28 @@ func locateHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 func enclosureHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 	wn := webNav{Enclosure: true, Root: cfg.Www.Rootdir}
 
+		currentState.mutex.RLock()
+		state := currentState.state
+		usage := currentState.usage
+		currentState.mutex.RUnlock()
+
+		var ws []*poolStatusWeb
+
+		for n, s := range state {
+			ws = append(ws, makePoolStatusWeb(s, usage))
+			ws[n].N = n
+		}
+
 	ewd := &enclosureWeb{
 		ChassisEnable:		  cfg.Chassis.Enable,
 		Chassis45drives15:	cfg.Chassis.Chassis45drives15,
 		Chassis45drives30:	cfg.Chassis.Chassis45drives30,
+		Chassis45drives45l:	cfg.Chassis.Chassis45drives45l,
 		Chassis45drives45:	cfg.Chassis.Chassis45drives45,
 		Chassis45drives60:	cfg.Chassis.Chassis45drives60,
+		Pools:            ws,
 	}
+
 
 	err := templates.ExecuteTemplate(w, "enclosure.html", &webData{Nav: wn, Data: ewd})
 	if err != nil {

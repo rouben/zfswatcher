@@ -121,6 +121,7 @@ type cfgType struct {
 		Enable							bool
 		Chassis45drives15		bool
 		Chassis45drives30		bool
+		Chassis45drives45l  bool
 		Chassis45drives45		bool
 		Chassis45drives60		bool
 	}

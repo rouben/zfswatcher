@@ -23,6 +23,7 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	auth "github.com/abbot/go-http-auth"
 	"github.com/damicon/zfswatcher/notifier"
 	"html/template"
@@ -145,7 +146,7 @@ type enclosureWeb struct {
 	Chassis45drives45l bool
 	Chassis45drives45 bool
 	Chassis45drives60 bool
-	Pools            []*chassisStatusWeb
+	Drives           []*devChassisStatusWeb
 }
 
 var (
@@ -246,7 +247,6 @@ func makeChassisStatusWeb(pool *PoolType) *chassisStatusWeb {
 		devw := devChassisStatusWeb{
 			Name:       dev.name,
 			State:      dev.state,
-			StateClass: cfg.Www.Devstatecssclassmap[dev.state],
 		}
 		devw.Indent = 1
 		for d := n; pool.devs[d].parentDev != -1; d = pool.devs[d].parentDev {
@@ -450,10 +450,28 @@ func enclosureHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 		currentState.mutex.RUnlock()
 
 		var ws []*chassisStatusWeb
+		var wsx []*devChassisStatusWeb
 
 		for n, s := range state {
 			ws = append(ws, makeChassisStatusWeb(s))
 			ws[n].N = n
+		}
+
+		regx, _ := regexp.Compile("^1-.*")
+		regy, _ := regexp.Compile("^2-.*")
+
+		for _, v := range ws {
+			for _, x := range v.Devs {
+				wsy := &devChassisStatusWeb{
+					Name:       x.Name,
+					State:      x.State,
+				}
+				if regx.MatchString(x.Name) {
+					wsx = append(wsx, wsy)
+				} else if regy.MatchString(x.Name) {
+					wsx = append(wsx, wsy)
+				}
+			}
 		}
 
 	ewd := &enclosureWeb{
@@ -463,7 +481,7 @@ func enclosureHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 		Chassis45drives45l:	cfg.Chassis.Chassis45drives45l,
 		Chassis45drives45:	cfg.Chassis.Chassis45drives45,
 		Chassis45drives60:	cfg.Chassis.Chassis45drives60,
-		Pools:            ws,
+		Drives:						wsx,
 	}
 
 	err := templates.ExecuteTemplate(w, "enclosure.html", &webData{Nav: wn, Data: ewd})

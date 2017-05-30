@@ -12,7 +12,6 @@
     {{ end }}
     {{ if .Chassis45drives45 }}
       <h3 align="center">45Drives S45</h3>
-      {{ if .Pools }}
       <table class="table table-zfswatcher-dashboard table-hover">
         <thead>
           <tr>
@@ -34,20 +33,11 @@
           </tr>
         </thead>
         <tbody>
-          {{ range .Pools }}
-          <tr>
-          {{ range .Devs }}
-            <td>{{ .Name }}{{ .State }}</td>
-          {{ end }}
-        </tr>
+          {{ range .Drives }}
+            <td>{{ .Name }}<br/>{{ .State }}</td>
           {{ end }}
         </tbody>
       </table>
-      {{ else }}
-      <div class="alert alert-info">
-        There are no pools.
-      </div>
-      {{ end }}
       {{ else }}
         <div class="alert alert-error">
           Enclosure detection has not been enabled in config

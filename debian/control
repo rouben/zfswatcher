@@ -1,7 +1,7 @@
 Source: zfswatcher
 Section: utils
 Priority: extra
-Maintainer: Janne Snabb <snabb@epipe.com>
+Maintainer: Rouben <rouben@rouben.net>
 Build-Depends: debhelper (>= 8.0.0)
 Standards-Version: 3.9.3
 Homepage: http://zfswatcher.damicon.fi/

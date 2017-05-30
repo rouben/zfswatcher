@@ -1,3 +1,29 @@
+zfswatcher (0.4.4-1) unstable; urgency=medium
+
+  * New version 0.4.4.
+  * Contributions from slacker87:
+    * further isolate new enclosure page from pool status page
+      for reduction of cross page calls that may break later if
+      one page is modified without other.
+    * make a new status function for chassis drive status
+    * have zfswatcher play nice with go version 1.8
+    * fix the way resource folder is loaded to work with newer
+      http-auth
+    * add config switchers if we are using a specific hardware
+      chassis and have them
+    * do something in dashboard template
+    * move chassis to its own header tab
+    * make a new enclosure tab, have it provide all disk names
+      and current health
+    * status, TODO move each enclosure type to its own template
+      within main
+    * enclosure template
+    * upgrade bootstrap and jquery versions, refactor some
+      css/js things, remove old
+    * code.google source stuff
+
+ -- Rouben <rouben@rouben.net>  Tue, 30 May 2017 15:39:28 -0400
+
 zfswatcher (0.4.3-1) unstable; urgency=medium
 
   * New version 0.4.3.

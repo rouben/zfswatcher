@@ -111,22 +111,15 @@ type poolStatusWeb struct {
 
 type chassisStatusWeb struct {
 	N            int
-	Name         string
-	State        string
-	StateClass   string
-	Status       string
-	Action       string
-	See          string
-	Scan         string
-	Devs         []devStatusWeb
-	Errors       string
-	Used         int64
-	UsedPercent  int
-	UsedClass    string
-	Avail        int64
-	AvailPercent int
-	Total        int64
+	Devs         []devChassisStatusWeb
 	Root         string
+}
+
+type devChassisStatusWeb struct {
+	Indent     int
+	Name       string
+	State      string
+	StateClass string
 }
 
 type dashboardWeb struct {
@@ -244,41 +237,16 @@ func makePoolStatusWeb(pool *PoolType, usage map[string]*PoolUsageType) *poolSta
 	return statusWeb
 }
 
-func makeChassisStatusWeb(pool *PoolType, usage map[string]*PoolUsageType) *chassisStatusWeb {
+func makeChassisStatusWeb(pool *PoolType) *chassisStatusWeb {
 	statusWeb := &chassisStatusWeb{
-		Name:       pool.name,
-		State:      pool.state,
-		StateClass: cfg.Www.Poolstatecssclassmap[pool.state],
-		Status:     pool.status,
-		Action:     pool.action,
-		See:        pool.see,
-		Scan:       pool.scan,
-		Errors:     pool.errors,
 		Root:       cfg.Www.Rootdir,
-	}
-	statusWeb.Avail = -1
-	statusWeb.Used = -1
-	statusWeb.Total = -1
-	if u, ok := usage[pool.name]; ok {
-		statusWeb.Avail = u.Avail
-		statusWeb.AvailPercent = u.GetAvailPercent()
-		statusWeb.Used = u.Used
-		usedPercent := u.GetUsedPercent()
-		statusWeb.UsedPercent = usedPercent
-		statusWeb.Total = u.Avail + u.Used
-		usedSeverity, _ := cfg.Severity.Usedspace.GetByPercentage(usedPercent)
-		statusWeb.UsedClass = cfg.Www.Usedstatecssclassmap[usedSeverity]
 	}
 
 	for n, dev := range pool.devs {
-		devw := devStatusWeb{
+		devw := devChassisStatusWeb{
 			Name:       dev.name,
 			State:      dev.state,
 			StateClass: cfg.Www.Devstatecssclassmap[dev.state],
-			Read:       dev.read,
-			Write:      dev.write,
-			Cksum:      dev.cksum,
-			Rest:       dev.rest,
 		}
 		devw.Indent = 1
 		for d := n; pool.devs[d].parentDev != -1; d = pool.devs[d].parentDev {
@@ -479,13 +447,12 @@ func enclosureHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 
 		currentState.mutex.RLock()
 		state := currentState.state
-		usage := currentState.usage
 		currentState.mutex.RUnlock()
 
 		var ws []*chassisStatusWeb
 
 		for n, s := range state {
-			ws = append(ws, makeChassisStatusWeb(s, usage))
+			ws = append(ws, makeChassisStatusWeb(s))
 			ws[n].N = n
 		}
 
@@ -498,7 +465,6 @@ func enclosureHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 		Chassis45drives60:	cfg.Chassis.Chassis45drives60,
 		Pools:            ws,
 	}
-
 
 	err := templates.ExecuteTemplate(w, "enclosure.html", &webData{Nav: wn, Data: ewd})
 	if err != nil {

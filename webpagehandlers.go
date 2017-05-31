@@ -30,6 +30,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+	"sort"
+	"strings"
 )
 
 var templates *template.Template
@@ -146,7 +148,8 @@ type enclosureWeb struct {
 	Chassis45drives45l bool
 	Chassis45drives45 bool
 	Chassis45drives60 bool
-	Drives           []*devChassisStatusWeb
+	Drives1           []*devChassisStatusWeb
+	Drives2           []*devChassisStatusWeb
 }
 
 var (
@@ -451,6 +454,7 @@ func enclosureHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 
 		var ws []*chassisStatusWeb
 		var wsx []*devChassisStatusWeb
+		var wsz []*devChassisStatusWeb
 
 		for n, s := range state {
 			ws = append(ws, makeChassisStatusWeb(s))
@@ -462,17 +466,37 @@ func enclosureHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 
 		for _, v := range ws {
 			for _, x := range v.Devs {
-				wsy := &devChassisStatusWeb{
+				wsa := &devChassisStatusWeb{
 					Name:       x.Name,
 					State:      x.State,
 				}
 				if regx.MatchString(x.Name) {
-					wsx = append(wsx, wsy)
+					wsx = append(wsx, wsa)
 				} else if regy.MatchString(x.Name) {
-					wsx = append(wsx, wsy)
+					wsz = append(wsz, wsa)
 				}
 			}
 		}
+
+		sort.Slice(wsx, func(i, j int) bool {
+		    switch strings.Compare(wsx[i].Name[:1], wsx[j].Name[:1]) {
+		    case -1:
+		        return true
+		    case 1:
+		        return false
+		    }
+		    return wsx[i].State > wsx[j].State
+		})
+
+		sort.Slice(wsz, func(i, j int) bool {
+		    switch strings.Compare(wsz[i].Name[:1], wsz[j].Name[:1]) {
+		    case -1:
+		        return true
+		    case 1:
+		        return false
+		    }
+		    return wsz[i].State > wsz[j].State
+		})
 
 	ewd := &enclosureWeb{
 		ChassisEnable:		  cfg.Chassis.Enable,
@@ -481,7 +505,8 @@ func enclosureHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 		Chassis45drives45l:	cfg.Chassis.Chassis45drives45l,
 		Chassis45drives45:	cfg.Chassis.Chassis45drives45,
 		Chassis45drives60:	cfg.Chassis.Chassis45drives60,
-		Drives:						wsx,
+		Drives1:						wsx,
+		Drives2:						wsz,
 	}
 
 	err := templates.ExecuteTemplate(w, "enclosure.html", &webData{Nav: wn, Data: ewd})

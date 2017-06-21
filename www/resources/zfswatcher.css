@@ -1,3 +1,7 @@
+body {
+  background: transparent url("circles-and-roundabouts.png") repeat scroll 0% 0%;
+}
+
 .table-zfswatcher-dashboard th,
 .table-zfswatcher-dashboard td {
   vertical-align:middle;
@@ -6,4 +10,82 @@
 .progress-zfswatcher-dashboard {
   margin-bottom: 0px;
   min-width: 50px;
+}
+
+/* for enclosure drive status classes */
+.enclosure45table {
+  border: 4px solid #3e3a3a;
+  border-top: 30px solid #3e3a3a;
+  border-bottom: 30vh solid #3e3a3a;
+  background-color: #3e3a3a;
+  border-collapse: separate !important;
+  border-spacing: 7px;
+  border-radius: 5px;
+  -webkit-box-shadow: 1px 1px 2px 2px rgba(0,0,0,0.2);
+  -moz-box-shadow: 1px 1px 2px 2px rgba(0,0,0,0.2);
+  box-shadow: 1px 1px 2px 2px rgba(0,0,0,0.2);
+}
+
+.enclosuretabletd {
+  border: 3px solid #3e3a3a;
+  text-align: center;
+  padding-top: 5%;
+  padding-bottom: 5%;
+  min-width: 4vw;
+  border-radius: 12px 12px 12px 12px;
+-moz-border-radius: 12px 12px 12px 12px;
+-webkit-border-radius: 12px 12px 12px 12px;
+-webkit-box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.2);
+-moz-box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.2);
+box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.2);
+}
+
+.isONLINE {
+  background-color: #148614;
+  color: #d1d1d1;
+}
+
+.isOFFLINE {
+  background-color: : #2d2a2a;
+  color: #d1d1d1;
+}
+
+.isREMOVED {
+  background-color: : #e69d17;
+  color: #d1d1d1;
+}
+
+.isFAULTED {
+  background-color: : #e73737;
+  color: #d1d1d1;
+}
+
+.isSPLIT {
+  background-color: : #e69d17;
+  color: #d1d1d1;
+}
+
+.isUNAVAIL {
+  background-color: : #2d2a2a;
+  color: #d1d1d1;
+}
+
+.isDEGRADED {
+  background-color: : #e69d17;
+  color: #d1d1d1;
+}
+
+.isUNKNOWN {
+  background-color: : #656161;
+  color: #d1d1d1;
+}
+
+.isINUSE {
+  background-color: : #e69d17;
+  color: #d1d1d1;
+}
+
+.isAVAIL {
+  background-color: #1c691c;
+  color: #d1d1d1;
 }

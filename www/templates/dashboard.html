@@ -35,8 +35,8 @@
 					<a href="{{ .Root }}/usage/{{ .Name }}">
 					<div class="progress progress-zfswatcher-dashboard">
 					{{ if or .UsedPercent .AvailPercent }}
-						<div class="bar {{ .UsedClass }}" style="width: {{ .UsedPercent }}%"></div>
-						<div class="bar	bar-success" style="width: {{ .AvailPercent }}%"></div>
+						<div class="progress-bar {{ .UsedClass }}" style="width: {{ .UsedPercent }}%"></div>
+						<div class="progress-bar	progress-bar-success" style="width: {{ .AvailPercent }}%"></div>
 					{{ end }}
 					</div>
 					</a>

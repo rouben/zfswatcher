@@ -36,13 +36,13 @@
 					{{ if .Locate }}
 					<input type="hidden" name="dev" value="{{ .Name }}">
 					<input type="hidden" name="state" value="off">
-					<button type="submit" class="btn btn-mini btn-warning">
+					<button type="submit" class="btn btn-sm btn-warning">
 					☼
 					</button>
 					{{ else }}
 					<input type="hidden" name="dev" value="{{ .Name }}">
 					<input type="hidden" name="state" value="on">
-					<button type="submit" class="btn btn-mini">
+					<button type="submit" class="btn btn-sm">
 					☀
 					</button>
 					{{ end }}

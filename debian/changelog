@@ -1,3 +1,16 @@
+zfswatcher (0.4.5-1) unstable; urgency=medium
+
+  * New version 0.4.5.
+  * Contributions from slacker87:
+    * Fixed regression bug with progress bars not showing up
+    * Complete 45drives 45bay chassis enclosure page
+    * Other tweaks
+  * Contributions from kopernikus:
+    * Implement os info stubs for Illumos/Solaris
+    * Respect system GOPATH
+
+ -- Rouben <rouben@rouben.net>  Wed, 21 Jun 2017 06:14:39 -0400
+
 zfswatcher (0.4.4-1) unstable; urgency=medium
 
   * New version 0.4.4.

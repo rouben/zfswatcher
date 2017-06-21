@@ -24,19 +24,66 @@
 package main
 
 import (
+	"errors"
+	"fmt"
+	"os/exec"
+	"strconv"
+	"strings"
 	"time"
 )
 
 // Returns system uptime as time.Duration.
 func getSystemUptime() (uptime time.Duration, err error) {
-	// XXX
-	return 0, nil
+	var (
+		i    int
+		out  []byte
+		err1 error
+		err2 error
+	)
+
+	cmd := "kstat"
+	args := []string{"-p", "unix:0:system_misc:snaptime"}
+	if out, err1 = exec.Command(cmd, args...).Output(); err1 != nil {
+		return 0, errors.New("Failed to run 'kstat'")
+	}
+	_s := string(out)
+	parts := strings.Split(_s, "\t")
+	_p1 := parts[1]
+	_s = strings.Split(_p1, ".")[0]
+	//fmt.Printf("Before the dot -> %s\n", _s)
+	if i, err2 = strconv.Atoi(_s); err2 != nil {
+		return 0, errors.New("Uptime was not an integer")
+	}
+	uptime = time.Duration(i) * time.Second
+	return uptime, nil
 }
 
 // Returns system load averages.
 func getSystemLoadaverage() ([3]float32, error) {
-	// XXX
-	return [3]float32{0, 0, 0}, nil
+	var (
+		out []byte
+		err error
+		ret [3]float32
+		val float64
+	)
+	cmd := "uptime"
+	if out, err = exec.Command(cmd).Output(); err != nil {
+		return ret, errors.New("failed to run 'uptime'")
+	}
+	_s := string(out)
+	parts := strings.Split(_s, " ")
+	load := parts[len(parts)-3:]
+	//fmt.Printf("load parts -> %s\n", load)
+	for i, e := range load {
+		e = strings.Replace(e, ",", "", 1)
+		e = strings.Join(strings.Fields(e), "")
+		if val, err = strconv.ParseFloat(e, 32); err != nil {
+			return ret, errors.New(fmt.Sprintf("failed to convert load value '%s'", e))
+		}
+		ret[i] = float32(val)
+	}
+	return ret, nil
+	//return [3]float32{0, 0, 0}, nil
 }
 
 // Device lookup paths. (This list comes from lib/libzfs/libzfs_import.c)

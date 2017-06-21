@@ -23,12 +23,15 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	auth "github.com/abbot/go-http-auth"
 	"github.com/damicon/zfswatcher/notifier"
 	"html/template"
 	"net/http"
 	"sync"
 	"time"
+	"sort"
+	"strings"
 )
 
 var templates *template.Template
@@ -145,7 +148,8 @@ type enclosureWeb struct {
 	Chassis45drives45l bool
 	Chassis45drives45 bool
 	Chassis45drives60 bool
-	Pools            []*chassisStatusWeb
+	Drives1           []*devChassisStatusWeb
+	Drives2           []*devChassisStatusWeb
 }
 
 var (
@@ -246,7 +250,6 @@ func makeChassisStatusWeb(pool *PoolType) *chassisStatusWeb {
 		devw := devChassisStatusWeb{
 			Name:       dev.name,
 			State:      dev.state,
-			StateClass: cfg.Www.Devstatecssclassmap[dev.state],
 		}
 		devw.Indent = 1
 		for d := n; pool.devs[d].parentDev != -1; d = pool.devs[d].parentDev {
@@ -450,11 +453,50 @@ func enclosureHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 		currentState.mutex.RUnlock()
 
 		var ws []*chassisStatusWeb
+		var wsx []*devChassisStatusWeb
+		var wsz []*devChassisStatusWeb
 
 		for n, s := range state {
 			ws = append(ws, makeChassisStatusWeb(s))
 			ws[n].N = n
 		}
+
+		regx, _ := regexp.Compile("^1-.*")
+		regy, _ := regexp.Compile("^2-.*")
+
+		for _, v := range ws {
+			for _, x := range v.Devs {
+				wsa := &devChassisStatusWeb{
+					Name:       x.Name,
+					State:      x.State,
+				}
+				if regx.MatchString(x.Name) {
+					wsx = append(wsx, wsa)
+				} else if regy.MatchString(x.Name) {
+					wsz = append(wsz, wsa)
+				}
+			}
+		}
+
+		sort.Slice(wsx, func(i, j int) bool {
+		    switch strings.Compare(wsx[i].Name[:1], wsx[j].Name[:1]) {
+		    case -1:
+		        return true
+		    case 1:
+		        return false
+		    }
+		    return wsx[i].State > wsx[j].State
+		})
+
+		sort.Slice(wsz, func(i, j int) bool {
+		    switch strings.Compare(wsz[i].Name[:1], wsz[j].Name[:1]) {
+		    case -1:
+		        return true
+		    case 1:
+		        return false
+		    }
+		    return wsz[i].State > wsz[j].State
+		})
 
 	ewd := &enclosureWeb{
 		ChassisEnable:		  cfg.Chassis.Enable,
@@ -463,7 +505,8 @@ func enclosureHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 		Chassis45drives45l:	cfg.Chassis.Chassis45drives45l,
 		Chassis45drives45:	cfg.Chassis.Chassis45drives45,
 		Chassis45drives60:	cfg.Chassis.Chassis45drives60,
-		Pools:            ws,
+		Drives1:						wsx,
+		Drives2:						wsz,
 	}
 
 	err := templates.ExecuteTemplate(w, "enclosure.html", &webData{Nav: wn, Data: ewd})

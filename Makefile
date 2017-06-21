@@ -24,7 +24,7 @@ SHELL	= /bin/sh
 
 # Go tool and library path:
 GO	= `which go`
-GOPATH	= `pwd`/golibs
+GOPATH	= `pwd`/golibs:`go env GOPATH`
 
 # Installation directories:
 prefix		= /usr

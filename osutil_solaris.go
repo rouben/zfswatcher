@@ -26,7 +26,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -35,23 +34,22 @@ import (
 // Returns system uptime as time.Duration.
 func getSystemUptime() (uptime time.Duration, err error) {
 	var (
-		i    int
-		out  []byte
-		err1 error
-		err2 error
+		i   int
+		out string
 	)
 
-	cmd := "kstat"
-	args := []string{"-p", "unix:0:system_misc:snaptime"}
-	if out, err1 = exec.Command(cmd, args...).Output(); err1 != nil {
+	cmd := "kstat -p unix:0:system_misc:snaptime"
+	if out, err = getCommandOutput(cmd); err != nil {
 		return 0, errors.New("Failed to run 'kstat'")
 	}
-	_s := string(out)
-	parts := strings.Split(_s, "\t")
+	parts := strings.Split(out, "\t")
+	if len(parts) < 2 {
+		return 0, errors.New("Invalid output from 'kstat'")
+	}
 	_p1 := parts[1]
-	_s = strings.Split(_p1, ".")[0]
+	_s := strings.Split(_p1, ".")[0]
 	//fmt.Printf("Before the dot -> %s\n", _s)
-	if i, err2 = strconv.Atoi(_s); err2 != nil {
+	if i, err = strconv.Atoi(_s); err != nil {
 		return 0, errors.New("Uptime was not an integer")
 	}
 	uptime = time.Duration(i) * time.Second
@@ -61,17 +59,16 @@ func getSystemUptime() (uptime time.Duration, err error) {
 // Returns system load averages.
 func getSystemLoadaverage() ([3]float32, error) {
 	var (
-		out []byte
+		out string
 		err error
 		ret [3]float32
 		val float64
 	)
 	cmd := "uptime"
-	if out, err = exec.Command(cmd).Output(); err != nil {
+	if out, err = getCommandOutput(cmd); err != nil {
 		return ret, errors.New("failed to run 'uptime'")
 	}
-	_s := string(out)
-	parts := strings.Split(_s, " ")
+	parts := strings.Split(out, " ")
 	load := parts[len(parts)-3:]
 	//fmt.Printf("load parts -> %s\n", load)
 	for i, e := range load {

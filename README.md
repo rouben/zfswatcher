@@ -1,3 +1,17 @@
+[![Language](https://img.shields.io/badge/language-Go-brightgreen.svg)](https://golang.org/)
+
+![OS](https://img.shields.io/badge/os-Linux%2C%20FreeBSD%2C%20Solaris%2C%20OpenSolaris%2C%20OpenIndiana-brightgreen.svg)
+
+[![License](https://img.shields.io/github/license/rouben/zfswatcher.svg)](COPYING)
+
+[![Release](https://img.shields.io/github/release/rouben/zfswatcher.svg)](https://github.com/rouben/zfswatcher/releases)
+![Downloads](https://img.shields.io/github/downloads/rouben/zfswatcher/latest/total.svg)
+![TotalDownloads](https://img.shields.io/github/downloads/rouben/zfswatcher/total.svg)
+
+[![GitHub issues](https://img.shields.io/github/issues/rouben/zfswatcher.svg)](https://github.com/rouben/zfswatcher/issues)
+[![GitHub forks](https://img.shields.io/github/forks/rouben/zfswatcher.svg)](https://github.com/rouben/zfswatcher/network)
+[![GitHub stars](https://img.shields.io/github/stars/rouben/zfswatcher.svg)](https://github.com/rouben/zfswatcher/stargazers)
+
 zfswatcher
 ==========
 

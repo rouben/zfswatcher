@@ -1,3 +1,16 @@
+zfswatcher (0.4.6-1) unstable; urgency=medium
+
+  * New version 0.4.6.
+  * Contributions from @slacker87, Paul Koelle and @kopernikus:
+    * Improved Illumos/Solaris support and cleanup
+    * Added sample config and service for Illumos/Solaris
+  * Contribution from @Der-Jan:
+    * Add missing web root variable definition
+    * Cleanup Makefile
+  * Further improve Makefile consistency
+
+ -- Rouben <rouben@rouben.net>  Sun, 22 Oct 2017 21:01:34 -0400
+
 zfswatcher (0.4.5-1) unstable; urgency=medium
 
   * New version 0.4.5.

@@ -23,7 +23,7 @@
 SHELL	= /bin/sh
 
 # Go tool and library path:
-GO	= `which go`
+GO	= $(shell which go)
 GOPATH	= $(shell pwd)/golibs:$(shell go env GOPATH)
 
 # Installation directories:
@@ -40,7 +40,7 @@ man1dir		= $(mandir)/man1
 man5dir		= $(mandir)/man5
 man8dir		= $(mandir)/man8
 
-VERSION		= `fgrep VERSION version.go | cut -d\" -f2`
+VERSION		= $(shell fgrep VERSION version.go | cut -d\" -f2)
 
 # Rules:
 all: zfswatcher
@@ -95,7 +95,7 @@ deb:
 # Make RPM package:
 rpm:	dist
 	version=$(VERSION) &&						\
-	rpmbuild=`mktemp -d "/tmp/zfswatcher-rpmbuild-XXXXXXXX"`;	\
+	rpmbuild=$(shell mktemp -d "/tmp/zfswatcher-rpmbuild-XXXXXXXX");\
 	mkdir -p $$rpmbuild/TMP &&					\
 	mkdir -p $$rpmbuild/BUILD &&					\
 	mkdir -p $$rpmbuild/RPMS &&					\

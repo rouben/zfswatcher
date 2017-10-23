@@ -52,7 +52,7 @@ conventions. It can be started as follows:
     service zfswatcher start
 
 
-Installing from source on Linux and FreeBSD
+Installing from source on Linux, FreeBSD and Opensolaris/Illumos
 -------------------------------------------
 
 Generally it is best to use the ready made packages on Debian/Ubuntu
@@ -98,18 +98,6 @@ subdirectory. They may be useful.
 
 See the installed zfswatcher(8) manual page for information on invoking
 the zfswatcher process.
-
-
-Installing from source on Solaris/OpenSolaris/OpenIndiana
----------------------------------------------------------
-
-The normal "gc" Go toolchain is not available on this plaform.
-You need to compile a recent version of
-[gccgo](http://golang.org/doc/install/gccgo) from the Subversion
-repository at `svn://gcc.gnu.org/svn/gcc/branches/gccgo`. After that
-you can utilize the `etc/gccgo-build.sh` shell script.
-
-Good luck!
 
 
 Configuration

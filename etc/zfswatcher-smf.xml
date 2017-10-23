@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<service_bundle type="manifest" name="export">
+  <service name="system/zfswatcher" type="service" version="1">
+    <create_default_instance enabled="false" />
+    <single_instance />
+    <dependency name="filesystem" grouping="require_all" restart_on="error" type="service">
+      <service_fmri value="svc:/system/filesystem/local" />
+    </dependency>
+    <method_context working_directory="/tmp">
+      <method_credential user="daemon" group="daemon" />
+      <method_environment>
+        <envvar name="PATH" value="/sbin:/usr/sbin:/usr/bin" />
+        <envvar name="HOME" value="/tmp" />
+      </method_environment>
+    </method_context>
+    <exec_method type="method" name="start" exec="/usr/sbin/zfswatcher" timeout_seconds="60" />
+    <exec_method type="method" name="stop" exec=":kill" timeout_seconds="60" />
+    <property_group name="startd" type="framework">
+      <propval name="duration" type="astring" value="child" />
+      <propval name="ignore_error" type="astring" value="core" />
+    </property_group>
+    <property_group name="application" type="application">
+	    <propval name="config_file" type="astring" value="/etc/zfs/zfswatcher.conf" />
+    </property_group>
+    <template>
+      <common_name>
+        <loctext xml:lang="C">ZFS watcher service</loctext>
+      </common_name>
+    </template>
+  </service>
+</service_bundle>

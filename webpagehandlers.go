@@ -90,6 +90,7 @@ type devStatusWeb struct {
 	Write      int64
 	Cksum      int64
 	Rest       string
+	Root	   string
 }
 
 type poolStatusWeb struct {
@@ -222,6 +223,7 @@ func makePoolStatusWeb(pool *PoolType, usage map[string]*PoolUsageType) *poolSta
 			Write:      dev.write,
 			Cksum:      dev.cksum,
 			Rest:       dev.rest,
+            Root:       cfg.Www.Rootdir,
 		}
 		devw.Indent = 1
 		for d := n; pool.devs[d].parentDev != -1; d = pool.devs[d].parentDev {

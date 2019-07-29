@@ -24,7 +24,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/damicon/zfswatcher/notifier"
 	"io"
 	"os"
 	"os/exec"
@@ -33,6 +32,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/damicon/zfswatcher/notifier"
+
+	"github.com/shirou/gopsutil/host"
+	"github.com/shirou/gopsutil/load"
 )
 
 // Run external command and capture output.
@@ -172,22 +176,36 @@ func fmtInt(buf []byte, v uint64) int {
 	return w
 }
 
+func getSystemUptime() (uint64, error) {
+	return host.Uptime()
+}
+
+func getSystemLoadaverage() ([3]float64, error) {
+	var avg *load.AvgStat
+	avg, _ = load.Avg()
+	return [3]float64{avg.Load1, avg.Load5, avg.Load15}, nil
+}
+
 // Implementation of "func (d Duration) String() string" which returns the
 // amount of days as well (but no fractions of seconds).
 func myDurationString(d time.Duration) string {
 	if d == time.Duration(0) {
 		return "unknown"
 	}
-	// stolen from src/pkg/time/time.go:
-	var buf [32]byte
-	w := len(buf)
 
 	u := uint64(d.Seconds())
 	neg := d < 0
 	if neg {
 		u = -u
 	}
+	return durationFromSeconds(u, neg)
+}
 
+func durationFromSeconds(u uint64, neg bool) string {
+
+	// stolen from src/pkg/time/time.go:
+	var buf [32]byte
+	w := len(buf)
 	w--
 	buf[w] = 's'
 
@@ -227,6 +245,10 @@ func myDurationString(d time.Duration) string {
 
 // Find full device path.
 func findDevicePath(dev string) (string, error) {
+	var deviceLookupPaths = [...]string{
+		"/dev",
+	}
+
 	for _, prefix := range deviceLookupPaths {
 		path := prefix + "/" + dev
 		st, err := os.Stat(path)

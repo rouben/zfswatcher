@@ -23,15 +23,15 @@ package main
 
 import (
 	"fmt"
-	"regexp"
-	auth "github.com/abbot/go-http-auth"
-	"github.com/damicon/zfswatcher/notifier"
 	"html/template"
 	"net/http"
-	"sync"
-	"time"
+	"regexp"
 	"sort"
 	"strings"
+	"sync"
+	"time"
+
+	"github.com/damicon/zfswatcher/notifier"
 )
 
 var templates *template.Template
@@ -64,8 +64,8 @@ type webNav struct {
 	Statistics bool
 	Logs       bool
 	About      bool
-	Enclosure	 bool
-	Root	   string
+	Enclosure  bool
+	Root       string
 }
 
 type webSubNav struct {
@@ -90,7 +90,7 @@ type devStatusWeb struct {
 	Write      int64
 	Cksum      int64
 	Rest       string
-	Root	   string
+	Root       string
 }
 
 type poolStatusWeb struct {
@@ -114,9 +114,9 @@ type poolStatusWeb struct {
 }
 
 type chassisStatusWeb struct {
-	N            int
-	Devs         []devChassisStatusWeb
-	Root         string
+	N    int
+	Devs []devChassisStatusWeb
+	Root string
 }
 
 type devChassisStatusWeb struct {
@@ -129,9 +129,8 @@ type devChassisStatusWeb struct {
 type dashboardWeb struct {
 	SysUptime        string
 	ZfswatcherUptime string
-	SysLoadaverage   [3]float32
+	SysLoadaverage   [3]float64
 	Pools            []*poolStatusWeb
-
 }
 
 type logMsgWeb struct {
@@ -143,14 +142,14 @@ type logMsgWeb struct {
 }
 
 type enclosureWeb struct {
-	ChassisEnable			bool
-	Chassis45drives15 bool
-	Chassis45drives30 bool
+	ChassisEnable      bool
+	Chassis45drives15  bool
+	Chassis45drives30  bool
 	Chassis45drives45l bool
-	Chassis45drives45 bool
-	Chassis45drives60 bool
-	Drives1           []*devChassisStatusWeb
-	Drives2           []*devChassisStatusWeb
+	Chassis45drives45  bool
+	Chassis45drives60  bool
+	Drives1            []*devChassisStatusWeb
+	Drives2            []*devChassisStatusWeb
 }
 
 var (
@@ -223,7 +222,7 @@ func makePoolStatusWeb(pool *PoolType, usage map[string]*PoolUsageType) *poolSta
 			Write:      dev.write,
 			Cksum:      dev.cksum,
 			Rest:       dev.rest,
-            Root:       cfg.Www.Rootdir,
+			Root:       cfg.Www.Rootdir,
 		}
 		devw.Indent = 1
 		for d := n; pool.devs[d].parentDev != -1; d = pool.devs[d].parentDev {
@@ -245,13 +244,13 @@ func makePoolStatusWeb(pool *PoolType, usage map[string]*PoolUsageType) *poolSta
 
 func makeChassisStatusWeb(pool *PoolType) *chassisStatusWeb {
 	statusWeb := &chassisStatusWeb{
-		Root:       cfg.Www.Rootdir,
+		Root: cfg.Www.Rootdir,
 	}
 
 	for n, dev := range pool.devs {
 		devw := devChassisStatusWeb{
-			Name:       dev.name,
-			State:      dev.state,
+			Name:  dev.name,
+			State: dev.state,
 		}
 		devw.Indent = 1
 		for d := n; pool.devs[d].parentDev != -1; d = pool.devs[d].parentDev {
@@ -266,7 +265,7 @@ func makeChassisStatusWeb(pool *PoolType) *chassisStatusWeb {
 func statusHandler(w http.ResponseWriter, r *http.Request) {
 	wn := webNav{PoolStatus: true, Root: cfg.Www.Rootdir}
 
-	pool := r.URL.Path[len(cfg.Www.Rootdir + "/status/"):]
+	pool := r.URL.Path[len(cfg.Www.Rootdir+"/status/"):]
 
 	if !legalPoolName(pool) && !(pool == "") {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
@@ -327,7 +326,7 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 func usageHandler(w http.ResponseWriter, r *http.Request) {
 	wn := webNav{Root: cfg.Www.Rootdir} // not available in menu
 
-	pool := r.URL.Path[len(cfg.Www.Rootdir + "/usage/"):]
+	pool := r.URL.Path[len(cfg.Www.Rootdir+"/usage/"):]
 
 	if pool == "" || !legalPoolName(pool) {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
@@ -378,11 +377,10 @@ func dashboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	d := &dashboardWeb{
-		SysUptime:        myDurationString(uptime),
+		SysUptime:        durationFromSeconds(uptime, false),
 		ZfswatcherUptime: myDurationString(time.Since(startTime)),
 		SysLoadaverage:   loadavg,
 		Pools:            ws,
-
 	}
 
 	err = templates.ExecuteTemplate(w, "dashboard.html", &webData{Nav: wn, Data: d})
@@ -449,65 +447,65 @@ func locateHandler(w http.ResponseWriter, r *http.Request) {
 func enclosureHandler(w http.ResponseWriter, r *http.Request) {
 	wn := webNav{Enclosure: true, Root: cfg.Www.Rootdir}
 
-		currentState.mutex.RLock()
-		state := currentState.state
-		currentState.mutex.RUnlock()
+	currentState.mutex.RLock()
+	state := currentState.state
+	currentState.mutex.RUnlock()
 
-		var ws []*chassisStatusWeb
-		var wsx []*devChassisStatusWeb
-		var wsz []*devChassisStatusWeb
+	var ws []*chassisStatusWeb
+	var wsx []*devChassisStatusWeb
+	var wsz []*devChassisStatusWeb
 
-		for n, s := range state {
-			ws = append(ws, makeChassisStatusWeb(s))
-			ws[n].N = n
-		}
+	for n, s := range state {
+		ws = append(ws, makeChassisStatusWeb(s))
+		ws[n].N = n
+	}
 
-		regx, _ := regexp.Compile("^1-.*")
-		regy, _ := regexp.Compile("^2-.*")
+	regx, _ := regexp.Compile("^1-.*")
+	regy, _ := regexp.Compile("^2-.*")
 
-		for _, v := range ws {
-			for _, x := range v.Devs {
-				wsa := &devChassisStatusWeb{
-					Name:       x.Name,
-					State:      x.State,
-				}
-				if regx.MatchString(x.Name) {
-					wsx = append(wsx, wsa)
-				} else if regy.MatchString(x.Name) {
-					wsz = append(wsz, wsa)
-				}
+	for _, v := range ws {
+		for _, x := range v.Devs {
+			wsa := &devChassisStatusWeb{
+				Name:  x.Name,
+				State: x.State,
+			}
+			if regx.MatchString(x.Name) {
+				wsx = append(wsx, wsa)
+			} else if regy.MatchString(x.Name) {
+				wsz = append(wsz, wsa)
 			}
 		}
+	}
 
-		sort.Slice(wsx, func(i, j int) bool {
-		    switch strings.Compare(wsx[i].Name[:1], wsx[j].Name[:1]) {
-		    case -1:
-		        return true
-		    case 1:
-		        return false
-		    }
-		    return wsx[i].State > wsx[j].State
-		})
+	sort.Slice(wsx, func(i, j int) bool {
+		switch strings.Compare(wsx[i].Name[:1], wsx[j].Name[:1]) {
+		case -1:
+			return true
+		case 1:
+			return false
+		}
+		return wsx[i].State > wsx[j].State
+	})
 
-		sort.Slice(wsz, func(i, j int) bool {
-		    switch strings.Compare(wsz[i].Name[:1], wsz[j].Name[:1]) {
-		    case -1:
-		        return true
-		    case 1:
-		        return false
-		    }
-		    return wsz[i].State > wsz[j].State
-		})
+	sort.Slice(wsz, func(i, j int) bool {
+		switch strings.Compare(wsz[i].Name[:1], wsz[j].Name[:1]) {
+		case -1:
+			return true
+		case 1:
+			return false
+		}
+		return wsz[i].State > wsz[j].State
+	})
 
 	ewd := &enclosureWeb{
-		ChassisEnable:		  cfg.Chassis.Enable,
-		Chassis45drives15:	cfg.Chassis.Chassis45drives15,
-		Chassis45drives30:	cfg.Chassis.Chassis45drives30,
-		Chassis45drives45l:	cfg.Chassis.Chassis45drives45l,
-		Chassis45drives45:	cfg.Chassis.Chassis45drives45,
-		Chassis45drives60:	cfg.Chassis.Chassis45drives60,
-		Drives1:						wsx,
-		Drives2:						wsz,
+		ChassisEnable:      cfg.Chassis.Enable,
+		Chassis45drives15:  cfg.Chassis.Chassis45drives15,
+		Chassis45drives30:  cfg.Chassis.Chassis45drives30,
+		Chassis45drives45l: cfg.Chassis.Chassis45drives45l,
+		Chassis45drives45:  cfg.Chassis.Chassis45drives45,
+		Chassis45drives60:  cfg.Chassis.Chassis45drives60,
+		Drives1:            wsx,
+		Drives2:            wsz,
 	}
 
 	err := templates.ExecuteTemplate(w, "enclosure.html", &webData{Nav: wn, Data: ewd})
@@ -516,4 +514,5 @@ func enclosureHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
+
 // eof

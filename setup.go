@@ -322,7 +322,6 @@ func setup() {
 	// command line flags:
 	pflag.StringVarP(&cfgFile, "conf", "c", CFGFILE, "configuration file path")
 	pflag.BoolVarP(&optDebug, "debug", "d", false, "print debug information to stdout")
-	optHashPassword := pflag.BoolP("passwordhash", "P", false, "hash web password")
 	optTest := pflag.BoolP("test", "t", false, "test configuration and exit")
 	optVersion := pflag.BoolP("version", "v", false, "print version information and exit")
 
@@ -334,10 +333,6 @@ func setup() {
 	}
 	if *optVersion {
 		version()
-		os.Exit(0)
-	}
-	if *optHashPassword {
-		wwwHashPassword()
 		os.Exit(0)
 	}
 

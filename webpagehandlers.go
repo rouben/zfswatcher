@@ -263,7 +263,7 @@ func makeChassisStatusWeb(pool *PoolType) *chassisStatusWeb {
 	return statusWeb
 }
 
-func statusHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
+func statusHandler(w http.ResponseWriter, r *http.Request) {
 	wn := webNav{PoolStatus: true, Root: cfg.Www.Rootdir}
 
 	pool := r.URL.Path[len(cfg.Www.Rootdir + "/status/"):]
@@ -298,7 +298,7 @@ func statusHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 		}
 	}
 	if pool == "" {
-		http.Redirect(w, &r.Request, cfg.Www.Rootdir + "/status/"+subnav[0].Name, http.StatusSeeOther)
+		http.Redirect(w, r, cfg.Www.Rootdir+"/status/"+subnav[0].Name, http.StatusSeeOther)
 		return
 	}
 	if match == -1 {
@@ -324,7 +324,7 @@ func statusHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 	}
 }
 
-func usageHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
+func usageHandler(w http.ResponseWriter, r *http.Request) {
 	wn := webNav{Root: cfg.Www.Rootdir} // not available in menu
 
 	pool := r.URL.Path[len(cfg.Www.Rootdir + "/usage/"):]
@@ -353,7 +353,7 @@ func usageHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 	}
 }
 
-func dashboardHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
+func dashboardHandler(w http.ResponseWriter, r *http.Request) {
 	wn := webNav{Dashboard: true, Root: cfg.Www.Rootdir}
 
 	uptime, err := getSystemUptime()
@@ -392,7 +392,7 @@ func dashboardHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 	}
 }
 
-func statisticsHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
+func statisticsHandler(w http.ResponseWriter, r *http.Request) {
 	wn := webNav{Statistics: true, Root: cfg.Www.Rootdir}
 	err := templates.ExecuteTemplate(w, "statistics.html", &webData{Nav: wn})
 	if err != nil {
@@ -401,7 +401,7 @@ func statisticsHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 	}
 }
 
-func logsHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
+func logsHandler(w http.ResponseWriter, r *http.Request) {
 	wn := webNav{Logs: true, Root: cfg.Www.Rootdir}
 	wwwLogMutex.RLock()
 	err := templates.ExecuteTemplate(w, "logs.html", &webData{Nav: wn, Data: wwwLogBuffer})
@@ -412,7 +412,7 @@ func logsHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 	}
 }
 
-func aboutHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
+func aboutHandler(w http.ResponseWriter, r *http.Request) {
 	wn := webNav{About: true, Root: cfg.Www.Rootdir}
 	err := templates.ExecuteTemplate(w, "about.html",
 		&webData{Nav: wn,
@@ -426,7 +426,7 @@ func aboutHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 	}
 }
 
-func locateHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
+func locateHandler(w http.ResponseWriter, r *http.Request) {
 	dev := r.FormValue("dev") // XXX validate, remove slashes etc
 	state := r.FormValue("state")
 
@@ -443,11 +443,10 @@ func locateHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
-	http.Redirect(w, &r.Request, r.Referer(), http.StatusSeeOther)
+	http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
 }
 
-
-func enclosureHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
+func enclosureHandler(w http.ResponseWriter, r *http.Request) {
 	wn := webNav{Enclosure: true, Root: cfg.Www.Rootdir}
 
 		currentState.mutex.RLock()

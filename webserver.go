@@ -22,29 +22,12 @@
 package main
 
 import (
-	"fmt"
-	auth "github.com/abbot/go-http-auth"
-	"github.com/damicon/zfswatcher/notifier"
 	"html/template"
-	"math/rand"
 	"net/http"
 	"strings"
-	"time"
-)
 
-func getUserSecret(username, realm string) string {
-	if username == "" {
-		return ""
-	}
-	user, ok := cfg.Wwwuser[username]
-	if !ok {
-		return ""
-	}
-	if user.Enable {
-		return user.Password
-	}
-	return ""
-}
+	"github.com/damicon/zfswatcher/notifier"
+)
 
 func noDirListing(h http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -67,22 +50,20 @@ func webServer() {
 		notify.Printf(notifier.ERR, "error parsing templates: %s", err)
 	}
 
-	authenticator := auth.NewBasicAuthenticator("zfswatcher", getUserSecret)
-
-	http.Handle(cfg.Www.Rootdir + "/resources/",
-		http.StripPrefix(cfg.Www.Rootdir + "/resources",
+	http.Handle(cfg.Www.Rootdir+"/resources/",
+		http.StripPrefix(cfg.Www.Rootdir+"/resources",
 			noDirListing(
-					http.FileServer(
-						http.Dir(cfg.Www.Resourcedir)))))
+				http.FileServer(
+					http.Dir(cfg.Www.Resourcedir)))))
 
-	http.HandleFunc(cfg.Www.Rootdir + "/", authenticator.Wrap(dashboardHandler))
-	http.HandleFunc(cfg.Www.Rootdir + "/status/", authenticator.Wrap(statusHandler))
-	http.HandleFunc(cfg.Www.Rootdir + "/usage/", authenticator.Wrap(usageHandler))
-	http.HandleFunc(cfg.Www.Rootdir + "/statistics/", authenticator.Wrap(statisticsHandler))
-	http.HandleFunc(cfg.Www.Rootdir + "/logs/", authenticator.Wrap(logsHandler))
-	http.HandleFunc(cfg.Www.Rootdir + "/about/", authenticator.Wrap(aboutHandler))
-	http.HandleFunc(cfg.Www.Rootdir + "/locate/", authenticator.Wrap(locateHandler))
-	http.HandleFunc(cfg.Www.Rootdir + "/enclosure/", authenticator.Wrap(enclosureHandler))
+	http.HandleFunc(cfg.Www.Rootdir+"/", dashboardHandler)
+	http.HandleFunc(cfg.Www.Rootdir+"/status/", statusHandler)
+	http.HandleFunc(cfg.Www.Rootdir+"/usage/", usageHandler)
+	http.HandleFunc(cfg.Www.Rootdir+"/statistics/", statisticsHandler)
+	http.HandleFunc(cfg.Www.Rootdir+"/logs/", logsHandler)
+	http.HandleFunc(cfg.Www.Rootdir+"/about/", aboutHandler)
+	http.HandleFunc(cfg.Www.Rootdir+"/locate/", locateHandler)
+	http.HandleFunc(cfg.Www.Rootdir+"/enclosure/", enclosureHandler)
 
 	if cfg.Www.Certfile != "" && cfg.Www.Keyfile != "" {
 		err = http.ListenAndServeTLS(cfg.Www.Bind, cfg.Www.Certfile, cfg.Www.Keyfile, nil)
@@ -93,25 +74,3 @@ func webServer() {
 		notify.Printf(notifier.ERR, "error starting web server: %s", err)
 	}
 }
-
-func wwwHashPassword() {
-	fmt.Printf("Password (will echo): ")
-	var password string
-	_, err := fmt.Scanln(&password)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	rand.Seed(time.Now().UnixNano())
-
-	base64alpha := "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-	var salt []byte
-	for i := 0; i < 8; i++ {
-		salt = append(salt, base64alpha[rand.Intn(len(base64alpha))])
-	}
-
-	hash := auth.MD5Crypt([]byte(password), salt, []byte("$1$"))
-	fmt.Println("Hash:", string(hash))
-}
-
-// eof

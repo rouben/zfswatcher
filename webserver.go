@@ -59,11 +59,9 @@ func webServer() {
 	http.HandleFunc(cfg.Www.Rootdir+"/", dashboardHandler)
 	http.HandleFunc(cfg.Www.Rootdir+"/status/", statusHandler)
 	http.HandleFunc(cfg.Www.Rootdir+"/usage/", usageHandler)
-	http.HandleFunc(cfg.Www.Rootdir+"/statistics/", statisticsHandler)
 	http.HandleFunc(cfg.Www.Rootdir+"/logs/", logsHandler)
 	http.HandleFunc(cfg.Www.Rootdir+"/about/", aboutHandler)
 	http.HandleFunc(cfg.Www.Rootdir+"/locate/", locateHandler)
-	http.HandleFunc(cfg.Www.Rootdir+"/enclosure/", enclosureHandler)
 
 	if cfg.Www.Certfile != "" && cfg.Www.Keyfile != "" {
 		err = http.ListenAndServeTLS(cfg.Www.Bind, cfg.Www.Certfile, cfg.Www.Keyfile, nil)

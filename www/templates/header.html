@@ -40,10 +40,6 @@
 							<a href="{{ .Root }}/">Dashboard</a></li>
 						<li{{ if .PoolStatus }} class="active"{{ end }}>
 							<a href="{{ .Root }}/status/">Pool Status</a></li>
-						<li{{ if .Enclosure }} class="active"{{ end }}>
-							<a href="{{ .Root }}/enclosure/">Enclosure</a></li>
-						<li{{ if .Statistics }} class="active"{{ end }}>
-							<a href="{{ .Root }}/statistics/">Statistics</a></li>
 						<li{{ if .Logs }} class="active"{{ end }}>
 							<a href="{{ .Root }}/logs/">Logs</a></li>
 					</ul>

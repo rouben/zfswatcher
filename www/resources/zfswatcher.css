@@ -1,6 +1,3 @@
-body {
-  background: transparent url("circles-and-roundabouts.png") repeat scroll 0% 0%;
-}
 
 .table-zfswatcher-dashboard th,
 .table-zfswatcher-dashboard td {
@@ -18,42 +15,42 @@ body {
 }
 
 .isOFFLINE {
-  background-color: : #2d2a2a;
+  background-color: #2d2a2a;
   color: #d1d1d1;
 }
 
 .isREMOVED {
-  background-color: : #e69d17;
+  background-color: #e69d17;
   color: #d1d1d1;
 }
 
 .isFAULTED {
-  background-color: : #e73737;
+  background-color: #e73737;
   color: #d1d1d1;
 }
 
 .isSPLIT {
-  background-color: : #e69d17;
+  background-color: #e69d17;
   color: #d1d1d1;
 }
 
 .isUNAVAIL {
-  background-color: : #2d2a2a;
+  background-color: #2d2a2a;
   color: #d1d1d1;
 }
 
 .isDEGRADED {
-  background-color: : #e69d17;
+  background-color: #e69d17;
   color: #d1d1d1;
 }
 
 .isUNKNOWN {
-  background-color: : #656161;
+  background-color: #656161;
   color: #d1d1d1;
 }
 
 .isINUSE {
-  background-color: : #e69d17;
+  background-color: #e69d17;
   color: #d1d1d1;
 }
 

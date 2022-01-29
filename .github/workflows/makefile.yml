@@ -2,9 +2,9 @@ name: Makefile CI
 
 on:
   push:
-    branches: [ contrib ]
+    branches: [ contrib, github-workflow ]
   pull_request:
-    branches: [ contrib ]
+    branches: [ contrib, github-workflow ]
 
 jobs:
   build:

@@ -19,7 +19,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-      
+      with:
+        fetch-depth: 0
+        
     - name: Clean build environment
       run: make clean
     - name: Build ZFSWatcher
@@ -30,6 +32,7 @@ jobs:
       run: make deb
     - name: Build RPM packages
       run: make rpm
+      
     - name: Upload artifacts  
       uses: actions/upload-artifact@v2
       with:

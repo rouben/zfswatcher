@@ -1,10 +1,16 @@
-name: Makefile CI
+name: ZFSWatcher Makefile CI
 
 on:
   push:
-    branches: [ contrib, github-workflow ]
+    branches:
+      - contrib
+      - github-workflow
+    tags:
+      - '*'
   pull_request:
-    branches: [ contrib, github-workflow ]
+    branches:
+      - contrib
+      - github-workflow
 
 jobs:
   build:

@@ -1,0 +1,21 @@
+name: Makefile CI
+
+on:
+  push:
+    branches: [ contrib ]
+  pull_request:
+    branches: [ contrib ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      
+    - name: Build zfswatcher
+      run: make clean
+      run: make
+      
+runs-on: self-hosted

@@ -24,3 +24,21 @@ jobs:
       run: make clean
     - name: Build zfswatcher
       run: make
+    - name: Build tarball
+      run: make dist
+    - name: Build Debian package
+      run: make deb
+    - name: Build RPM packages
+      run: make rpm
+      
+    - uses: actions/upload-artifact@v2
+      with:
+        name: Tarball
+        path: *.tar.gz
+        name: Debian package
+        path: |
+          *.deb
+          *.changes
+        name: RPM packages
+        path: *.rpm
+        

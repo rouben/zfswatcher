@@ -27,6 +27,7 @@ import (
 	"net"
 	"strings"
 	"time"
+	"os"
 )
 
 func (n *Notifier) sendEmailSMTP(server, username, password, from, to, subject, text string) {
@@ -81,6 +82,7 @@ func (n *Notifier) loggerEmailSMTP(ch chan *Msg, server, username, password, fro
 	var throttleTimer *time.Timer
 
 	severityTrack := DEBUG
+	hostname, _ := os.Hostname()
 
 	for {
 		var throttleC <-chan time.Time
@@ -126,7 +128,7 @@ func (n *Notifier) loggerEmailSMTP(ch chan *Msg, server, username, password, fro
 				continue
 			}
 			mbuf, abuf = nil, nil
-			sevsubject := subject + " [" + severityTrack.String() + "]"
+			sevsubject := subject + " [" + hostname + "] [" + severityTrack.String() + "]"
 			severityTrack = DEBUG
 			lastFlush = time.Now()
 			if throttleTimer != nil {
@@ -143,7 +145,7 @@ func (n *Notifier) loggerEmailSMTP(ch chan *Msg, server, username, password, fro
 	}
 	// send the last entries:
 	if text := makeEmailText(mbuf, abuf); text != "" {
-		sevsubject := subject + " [" + severityTrack.String() + "]"
+		sevsubject := subject + " [" + hostname + "] [" + severityTrack.String() + "]"
 		n.wg.Add(1)
 		go n.sendEmailSMTP(server, username, password, from, to, sevsubject, text)
 	}

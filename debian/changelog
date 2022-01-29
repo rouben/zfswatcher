@@ -1,3 +1,10 @@
+zfswatcher (0.4.7-1) unstable; urgency=medium
+
+  * New version 0.4.7
+  * Fixed dependencies on Proxmox
+
+ -- Rouben Tchakhmakhtchian <rouben@rouben.net>  Sun, 13 Jun 2021 13:53:00 -0400
+
 zfswatcher (0.4.6-1) unstable; urgency=medium
 
   * New version 0.4.6.

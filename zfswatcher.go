@@ -56,6 +56,8 @@ var iostat struct {
 
 var startTime time.Time
 
+var hostname string
+
 // Keep track of highest (numerically lowest) severity level per pool.
 func trackNotifications(notificationSev map[string]notifier.Severity, name string, s notifier.Severity) {
 	if ns, ok := notificationSev[name]; ok {
@@ -88,14 +90,14 @@ func checkZpoolStatus(os, ns []*PoolType) {
 	// go through old pool list to check for disappeared pools:
 	for name := range os_pools {
 		if ns_pools[name] == nil {
-			notify.Printf(cfg.Severity.Poolremoved, `pool "%s" removed`, name)
+			notify.Printf(cfg.Severity.Poolremoved, `[host: %s] pool "%s" removed`, hostname, name)
 		}
 	}
 	// go though new pool list:
 	for name := range ns_pools {
 		// check for new pools:
 		if os_pools[name] == nil {
-			notify.Printf(cfg.Severity.Pooladded, `pool "%s" added`, name)
+			notify.Printf(cfg.Severity.Pooladded, `[host: %s] pool "%s" added`, hostname , name)
 			trackNotifications(notificationSev, name, cfg.Severity.Pooladded)
 			continue
 		}
@@ -117,8 +119,8 @@ func checkZpoolStatus(os, ns []*PoolType) {
 				continue
 			}
 			if ns_devs[dname] == nil {
-				notify.Printf(cfg.Severity.Devremoved, `pool "%s" device "%s" removed`,
-					name, dname)
+				notify.Printf(cfg.Severity.Devremoved, `[host: %s] pool "%s" device "%s" removed`,
+					hostname, name, dname)
 				trackNotifications(notificationSev, name, cfg.Severity.Devremoved)
 			}
 		}
@@ -129,34 +131,34 @@ func checkZpoolStatus(os, ns []*PoolType) {
 			}
 			// check for new devices:
 			if os_devs[dname] == nil {
-				notify.Printf(cfg.Severity.Devadded, `pool "%s" device "%s" added`,
-					name, dname)
+				notify.Printf(cfg.Severity.Devadded, `[host: %s] pool "%s" device "%s" added`,
+					hostname, name, dname)
 				trackNotifications(notificationSev, name, cfg.Severity.Devadded)
 				continue
 			}
 			// pre-existing device, perform checks to find changes:
 			if ns_devs[dname].read > os_devs[dname].read {
 				notify.Printf(cfg.Severity.Devreaderrorsincreased,
-					`pool "%s" device "%s" read errors increased: %d -> %d`,
-					name, dname, os_devs[dname].read, ns_devs[dname].read)
+					`[host: %s] pool "%s" device "%s" read errors increased: %d -> %d`,
+					hostname, name, dname, os_devs[dname].read, ns_devs[dname].read)
 				trackNotifications(notificationSev, name, cfg.Severity.Devreaderrorsincreased)
 			}
 			if ns_devs[dname].write > os_devs[dname].write {
 				notify.Printf(cfg.Severity.Devwriteerrorsincreased,
-					`pool "%s" device "%s" write errors increased: %d -> %d`,
-					name, dname, os_devs[dname].write, ns_devs[dname].write)
+					`[host: %s] pool "%s" device "%s" write errors increased: %d -> %d`,
+					hostname, name, dname, os_devs[dname].write, ns_devs[dname].write)
 				trackNotifications(notificationSev, name, cfg.Severity.Devwriteerrorsincreased)
 			}
 			if ns_devs[dname].cksum > os_devs[dname].cksum {
 				notify.Printf(cfg.Severity.Devcksumerrorsincreased,
-					`pool "%s" device "%s" cksum errors increased: %d -> %d`,
-					name, dname, os_devs[dname].cksum, ns_devs[dname].cksum)
+					`[host: %s] pool "%s" device "%s" cksum errors increased: %d -> %d`,
+					hostname, name, dname, os_devs[dname].cksum, ns_devs[dname].cksum)
 				trackNotifications(notificationSev, name, cfg.Severity.Devcksumerrorsincreased)
 			}
 			if ns_devs[dname].state != os_devs[dname].state {
 				severity := cfg.Severity.Devstatemap.getSeverity(ns_devs[dname].state)
 				notify.Printf(severity, `pool "%s" device "%s" state changed: %s -> %s`,
-					name, dname, os_devs[dname].state, ns_devs[dname].state)
+					hostname, name, dname, os_devs[dname].state, ns_devs[dname].state)
 				trackNotifications(notificationSev, name, severity)
 				// set leds
 				if cfg.Leds.Enable && len(ns_devs[dname].subDevs) == 0 {
@@ -166,14 +168,14 @@ func checkZpoolStatus(os, ns []*PoolType) {
 			if ns_devs[dname].rest != os_devs[dname].rest {
 				if ns_devs[dname].rest != "" {
 					notify.Printf(cfg.Severity.Devadditionalinfochanged,
-						`pool "%s" device "%s" new additional info: %s`,
-						name, dname, ns_devs[dname].rest)
+						`[host: %s] pool "%s" device "%s" new additional info: %s`,
+						hostname, name, dname, ns_devs[dname].rest)
 					trackNotifications(notificationSev, name,
 						cfg.Severity.Devadditionalinfochanged)
 				} else {
 					notify.Printf(cfg.Severity.Devadditionalinfocleared,
 						`pool "%s" device "%s" additional info cleared`,
-						name, dname)
+						hostname, name, dname)
 					trackNotifications(notificationSev, name,
 						cfg.Severity.Devadditionalinfocleared)
 				}
@@ -182,24 +184,24 @@ func checkZpoolStatus(os, ns []*PoolType) {
 		// check changes in the general pool information:
 		if ns_pools[name].status != os_pools[name].status {
 			if ns_pools[name].status != "" {
-				notify.Printf(cfg.Severity.Poolstatuschanged, `pool "%s" new status: %s`,
-					name, ns_pools[name].status)
+				notify.Printf(cfg.Severity.Poolstatuschanged, `[host: %s] pool "%s" new status: %s`,
+					hostname, name, ns_pools[name].status)
 				trackNotifications(notificationSev, name, cfg.Severity.Poolstatuschanged)
 			} else {
-				notify.Printf(cfg.Severity.Poolstatuscleared, `pool "%s" status cleared`,
-					name)
+				notify.Printf(cfg.Severity.Poolstatuscleared, `[host: %s] pool "%s" status cleared`,
+					hostname, name)
 				trackNotifications(notificationSev, name, cfg.Severity.Poolstatuscleared)
 			}
 		}
 		if ns_pools[name].errors != os_pools[name].errors {
-			notify.Printf(cfg.Severity.Poolerrorschanged, `pool "%s" new errors: %s`,
-				name, ns_pools[name].errors)
+			notify.Printf(cfg.Severity.Poolerrorschanged, `[host: %s] pool "%s" new errors: %s`,
+				hostname, name, ns_pools[name].errors)
 			trackNotifications(notificationSev, name, cfg.Severity.Poolerrorschanged)
 		}
 		if ns_pools[name].state != os_pools[name].state {
 			severity := cfg.Severity.Poolstatemap.getSeverity(ns_pools[name].state)
-			notify.Printf(severity, `pool "%s" state changed: %s -> %s`,
-				name, os_pools[name].state, ns_pools[name].state)
+			notify.Printf(severity, `[host: %s] pool "%s" state changed: %s -> %s`,
+				hostname, name, os_pools[name].state, ns_pools[name].state)
 			trackNotifications(notificationSev, name, severity)
 		}
 	}
@@ -235,8 +237,8 @@ func checkZfsUsage(oldusage, newusage map[string]*PoolUsageType) {
 		}
 		if maxlevel != 0 {
 			notify.Printf(cfg.Severity.Usedspace[maxlevel],
-				`pool "%s" usage reached %d%%`,
-				pool, maxlevel)
+				`[host: %s] pool "%s" usage reached %d%%`,
+				hostname, pool, maxlevel)
 		}
 	}
 }
@@ -280,6 +282,8 @@ along with zfswatcher. If not, see <http://www.gnu.org/licenses/>.
 // The main program.
 func main() {
 	startTime = time.Now()
+	hn, _ := os.Hostname()
+	hostname = hn
 
 	// process command line arguments and config, initialize logging:
 	setup()

@@ -20,8 +20,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       
-    - name: Build zfswatcher
+    - name: Clean build environment
       run: make clean
+    - name: Build zfswatcher
       run: make
       
 runs-on: self-hosted

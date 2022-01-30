@@ -18,28 +18,46 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-    - uses: actions/checkout@v2
+    
+    - name: Checkout source
+      uses: actions/checkout@v2
       with:
         fetch-depth: 0
+        
     - name: Install pre-reqs
       run: sudo apt-get update && sudo apt-get install -y rpm dpkg-dev debhelper
+      
     - name: Clean build environment
       run: make clean
+      
     - name: Build ZFSWatcher
       run: make
+      
     - name: Build Tarball
       run: make dist
-    - name: Build Debian package
-      run: make deb
-    - name: Build RPM packages
-      run: make rpm
       
-    - name: Upload artifacts  
+    - name: Upload Tarball
       uses: actions/upload-artifact@v2
       with:
-        name: ZFSWatcher Build Artifacts
+        name: ZFSWatcher Tarball
+        path: '*.tar.*'
+
+    - name: Build Debian package
+      run: make deb
+      
+    - name: Upload Debian package and changelog  
+      uses: actions/upload-artifact@v2
+      with:
+        name: ZFSWatcher DEB and Changelog
         path: |
           *.deb
           *.changes
-          *.tar.*
-          *.rpm
+    
+    - name: Build RPM packages
+      run: make rpm
+      
+    - name: Upload RPM packages  
+      uses: actions/upload-artifact@v2
+      with:
+        name: ZFSWatcher RPMs
+        path: '*.rpm'

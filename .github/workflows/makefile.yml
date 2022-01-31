@@ -4,13 +4,9 @@ on:
   push:
     branches:
       - contrib
-      - github-workflow
-    tags:
-      - '*'
   pull_request:
     branches:
       - contrib
-      - github-workflow
 
 jobs:
   build:

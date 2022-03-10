@@ -24,7 +24,7 @@ package main
 import (
 	"fmt"
 	auth "github.com/abbot/go-http-auth"
-	"github.com/damicon/zfswatcher/notifier"
+	"zfswatcher/notifier"
 	"html/template"
 	"math/rand"
 	"net/http"

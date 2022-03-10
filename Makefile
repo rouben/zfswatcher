@@ -46,6 +46,9 @@ VERSION		= $(shell fgrep VERSION version.go | cut -d\" -f2)
 all: zfswatcher
 
 zfswatcher:
+ifeq (,$(wildcard ./go.mod))
+	$(GO) mod init zfswatcher
+endif
 	$(GO) get -d
 	$(GO) build -o $@
 

@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"regexp"
 	auth "github.com/abbot/go-http-auth"
-	"github.com/damicon/zfswatcher/notifier"
+	"zfswatcher/notifier"
 	"html/template"
 	"net/http"
 	"sync"

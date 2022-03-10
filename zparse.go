@@ -23,7 +23,7 @@ package main
 
 import (
 	"errors"
-	"github.com/damicon/zfswatcher/notifier"
+	"zfswatcher/notifier"
 	"io"
 	"runtime"
 	"strings"

@@ -25,7 +25,7 @@ import (
 	"gopkg.in/gcfg.v1"
 	"errors"
 	"fmt"
-	"github.com/damicon/zfswatcher/notifier"
+	"zfswatcher/notifier"
 	"github.com/ogier/pflag"
 	"os"
 	"strings"

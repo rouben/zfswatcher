@@ -30,7 +30,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/damicon/zfswatcher/notifier"
+	"zfswatcher/notifier"
 	"os"
 	"os/signal"
 	"runtime"

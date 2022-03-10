@@ -24,7 +24,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/damicon/zfswatcher/notifier"
+	"zfswatcher/notifier"
 	"io"
 	"os"
 	"os/exec"

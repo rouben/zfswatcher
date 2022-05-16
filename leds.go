@@ -153,6 +153,9 @@ func setDevLeds(devandled map[string]ibpiID) {
 			notify.Print(notifier.DEBUG, "skipping missing device LED: ", dev)
 			continue
 		}
+		if strings.Contains(devled.path, "nvme") {
+			continue
+		}
 		// reset unknown status to normal
 		if devled.state == IBPI_UNKNOWN {
 			devled.state = IBPI_NORMAL

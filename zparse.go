@@ -288,6 +288,8 @@ func parseZpoolStatus(zpoolStatusOutput string) (pools []*PoolType, err error) {
 			poolinfostr = ""
 			pools = append(pools, curpool)
 			s = stSTART
+		case line[:8] == "remove: ":
+			continue
 		default:
 			notify.Printf(notifier.CRIT, "invalid line %d in status output: %s", lineno+1, line)
 			notify.Attach(notifier.CRIT, zpoolStatusOutput)

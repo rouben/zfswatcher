@@ -157,7 +157,7 @@ func checkZpoolStatus(os, ns []*PoolType) {
 			}
 			if ns_devs[dname].state != os_devs[dname].state {
 				severity := cfg.Severity.Devstatemap.getSeverity(ns_devs[dname].state)
-				notify.Printf(severity, `pool "%s" device "%s" state changed: %s -> %s`,
+				notify.Printf(severity, `[host: %s] pool "%s" device "%s" state changed: %s -> %s`,
 					hostname, name, dname, os_devs[dname].state, ns_devs[dname].state)
 				trackNotifications(notificationSev, name, severity)
 				// set leds
@@ -174,7 +174,7 @@ func checkZpoolStatus(os, ns []*PoolType) {
 						cfg.Severity.Devadditionalinfochanged)
 				} else {
 					notify.Printf(cfg.Severity.Devadditionalinfocleared,
-						`pool "%s" device "%s" additional info cleared`,
+						`[host: %s] pool "%s" device "%s" additional info cleared`,
 						hostname, name, dname)
 					trackNotifications(notificationSev, name,
 						cfg.Severity.Devadditionalinfocleared)

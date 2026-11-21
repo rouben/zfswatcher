@@ -16,6 +16,14 @@ version 0.5.0 released 2026-11-21
 
  - Fixed wrong arguments in the "device state changed" notifications.
 
+ - External commands (zpool, zfs) are killed after 60 seconds, so a hanging
+   "zpool status" no longer stops the monitoring.
+
+ - Pools in state SUSPENDED now raise an alert. If you maintain your own
+   /etc/zfs/zfswatcher.conf, add SUSPENDED:alert to "poolstatemap" and
+   SUSPENDED:text-error to "poolstatecssclassmap"; states missing from these
+   maps are treated as severity info.
+
  - Test suite with real Proxmox VE and Debian 13 fixtures, CI with lint,
    formatting, race detector and vulnerability checks.
 

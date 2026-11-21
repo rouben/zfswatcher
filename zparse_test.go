@@ -315,3 +315,37 @@ func TestZpoolIostatParserVerboseProxmox(t *testing.T) {
 		t.Errorf("secundus has %d rows, want 6", got)
 	}
 }
+
+func TestParseZfsListAllProxmox(t *testing.T) {
+	// zfs list -r -t all: datasets, container volumes and snapshots.
+	usage := parseZfsList(readFixture(t, "zfs-list-all-proxmox.txt"))
+	if len(usage) != 31 {
+		t.Fatalf("got %d entries, want 31", len(usage))
+	}
+	snaps := 0
+	for name, u := range usage {
+		if strings.Contains(name, "@") {
+			snaps++
+			if u.Avail != -1 || u.Logicalused != -1 || u.Mountpoint != "-" {
+				t.Errorf("snapshot %s: unexpected entry %+v", name, u)
+			}
+		}
+	}
+	if snaps != 8 {
+		t.Errorf("got %d snapshots, want 8", snaps)
+	}
+
+	vol := usage["rpool/data/subvol-100-disk-0"]
+	if vol == nil {
+		t.Fatal("subvol-100-disk-0 not found")
+	}
+	if want := unniceNumber("587M"); vol.Usedsnap != want {
+		t.Errorf("Usedsnap = %d, want %d", vol.Usedsnap, want)
+	}
+	if usage["rpool/ROOT/pve-1"].Mountpoint != "/" {
+		t.Errorf("root dataset mountpoint = %q", usage["rpool/ROOT/pve-1"].Mountpoint)
+	}
+	if got := usage["datis/Daten"].Mountpoint; got != "/mnt/Daten" {
+		t.Errorf("datis/Daten mountpoint = %q", got)
+	}
+}

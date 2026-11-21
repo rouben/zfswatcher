@@ -1,0 +1,14 @@
+  pool: zfsw_feat
+ state: ONLINE
+status: Some supported and requested features are not enabled on the pool.
+	The pool can still be used, but some features are unavailable.
+action: Enable all features using 'zpool upgrade'. Once this is done,
+	the pool may no longer be accessible by software that does not support
+	the features. See zpool-features(7) for details.
+config:
+
+	NAME                         STATE     READ WRITE CKSUM
+	zfsw_feat                    ONLINE       0     0     0
+	  /var/tmp/zfsw-collect2/f1  ONLINE       0     0     0
+
+errors: No known data errors

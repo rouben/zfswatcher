@@ -1,0 +1,28 @@
+                                   capacity     operations     bandwidth
+pool                             alloc   free   read  write   read  write
+-------------------------------  -----  -----  -----  -----  -----  -----
+zfsw_draid                       75.6M  1.68G     31     73  2.89M  2.83M
+  draid1:2d:5c:1s-0              75.6M  1.68G     31     73  2.89M  2.83M
+    /var/tmp/zfsw-collect2/d1        -      -      5     14   442K   529K
+    spare-1                          -      -      0      7    738   537K
+      /var/tmp/zfsw-collect2/d2      -      -      0      6    661   481K
+      draid1-0-0                     -      -      8      5   492K   525K
+    /var/tmp/zfsw-collect2/d3        -      -      9     13  1.11M   771K
+    /var/tmp/zfsw-collect2/d4        -      -     10     20  1.11M   780K
+    /var/tmp/zfsw-collect2/d5        -      -      5     17   252K   340K
+-------------------------------  -----  -----  -----  -----  -----  -----
+zfsw_rz2                          101M  1.78G      0     35  1.13K  1.30M
+  raidz2-0                        101M  1.78G      0     35  1.13K  1.30M
+    /var/tmp/zfsw-collect2/z1        -      -      0      7    290   325K
+    /var/tmp/zfsw-collect2/z2        -      -      0      8    290   331K
+    /var/tmp/zfsw-collect2/z3        -      -      0      9    290   337K
+    /var/tmp/zfsw-collect2/z4        -      -      0      9    290   337K
+-------------------------------  -----  -----  -----  -----  -----  -----
+zfsw_rz3                          382K  2.25G      0     10  1.42K  99.3K
+  raidz3-0                        382K  2.25G      0     10  1.42K  99.3K
+    /var/tmp/zfsw-collect2/y1        -      -      0      2    290  19.9K
+    /var/tmp/zfsw-collect2/y2        -      -      0      2    290  19.8K
+    /var/tmp/zfsw-collect2/y3        -      -      0      2    290  19.9K
+    /var/tmp/zfsw-collect2/y4        -      -      0      2    290  19.9K
+    /var/tmp/zfsw-collect2/y5        -      -      0      2    290  19.9K
+-------------------------------  -----  -----  -----  -----  -----  -----

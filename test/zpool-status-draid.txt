@@ -1,0 +1,16 @@
+  pool: zfsw_draid
+ state: ONLINE
+config:
+
+	NAME                           STATE     READ WRITE CKSUM
+	zfsw_draid                     ONLINE       0     0     0
+	  draid1:2d:5c:1s-0            ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/d1  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/d2  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/d3  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/d4  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/d5  ONLINE       0     0     0
+	spares
+	  draid1-0-0                   AVAIL
+
+errors: No known data errors

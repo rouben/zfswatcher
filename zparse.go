@@ -23,10 +23,11 @@ package main
 
 import (
 	"errors"
-	"github.com/tantefred/zfswatcher/notifier"
 	"io"
 	"runtime"
 	"strings"
+
+	"github.com/tantefred/zfswatcher/notifier"
 )
 
 // ZFS pool disk usage.

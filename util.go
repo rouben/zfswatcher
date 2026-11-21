@@ -24,7 +24,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/tantefred/zfswatcher/notifier"
 	"io"
 	"os"
 	"os/exec"
@@ -33,6 +32,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/tantefred/zfswatcher/notifier"
 )
 
 // Run external command and capture output.

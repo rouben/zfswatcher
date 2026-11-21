@@ -23,8 +23,6 @@ package main
 
 import (
 	"fmt"
-	auth "github.com/abbot/go-http-auth"
-	"github.com/tantefred/zfswatcher/notifier"
 	"html/template"
 	"net/http"
 	"regexp"
@@ -32,6 +30,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	auth "github.com/abbot/go-http-auth"
+	"github.com/tantefred/zfswatcher/notifier"
 )
 
 var templates *template.Template

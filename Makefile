@@ -41,6 +41,10 @@ man8dir		= $(mandir)/man8
 
 VERSION		= $(shell fgrep VERSION version.go | cut -d\" -f2)
 
+# Git revision archived by "make dist". Defaults to the current commit so that
+# CI builds the code under test; use REF=$(VERSION) to archive the release tag.
+REF		?= HEAD
+
 # Rules:
 all: zfswatcher
 
@@ -72,7 +76,7 @@ install: zfswatcher
 dist:
 	version=$(VERSION) &&						\
 	git archive --prefix=zfswatcher-$${version}/			\
-		-o zfswatcher-$${version}.tar.gz $${version}
+		-o zfswatcher-$${version}.tar.gz $(REF)
 
 # Make a new Debian package version:
 newdebversion:

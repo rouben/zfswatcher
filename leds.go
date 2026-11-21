@@ -24,11 +24,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/tantefred/zfswatcher/notifier"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
+
+	"github.com/tantefred/zfswatcher/notifier"
 )
 
 // List of devices, paths and current LED statuses.

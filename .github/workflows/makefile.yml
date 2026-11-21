@@ -1,71 +1,76 @@
-name: ZFSWatcher Makefile CI
+name: Packages and pre-release
 
 on:
   push:
-    branches:
-      - contrib
+    branches: [contrib]
   pull_request:
-    branches:
-      - contrib
+    branches: [contrib]
+
+permissions:
+  contents: read
 
 jobs:
   build:
-
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed to publish the pre-release
 
     steps:
-    
-    - name: Checkout source
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-        
-    - name: Install pre-reqs
-      run: sudo apt-get update && sudo apt-get install -y rpm dpkg-dev debhelper
-      
-    - name: Clean build environment
-      run: make clean
-      
-    - name: Build ZFSWatcher
-      run: make
-      
-    - name: Build Tarball
-      run: make dist
-      
-    - name: Upload Tarball
-      uses: actions/upload-artifact@v2
-      with:
-        name: ZFSWatcher Tarball
-        path: '*.tar.*'
+      - name: Checkout source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-    - name: Build Debian package
-      run: make deb
-      
-    - name: Upload Debian package and changelog  
-      uses: actions/upload-artifact@v2
-      with:
-        name: ZFSWatcher DEB and Changelog
-        path: |
-          *.deb
-          *.changes
-    
-    - name: Build RPM packages
-      run: make rpm
-      
-    - name: Upload RPM packages  
-      uses: actions/upload-artifact@v2
-      with:
-        name: ZFSWatcher RPMs
-        path: '*.rpm'
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
 
-    - name: Publish pre-release
-      uses: marvinpinto/action-automatic-releases@latest
-      with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        prerelease: true
-        draft: true
-        automatic_release_tag: latest-dev
-        title: Development Build
-        files: |
-          *.rpm
-          *.deb
+      - name: Install pre-reqs
+        run: sudo apt-get update && sudo apt-get install -y build-essential rpm dpkg-dev debhelper
+
+      - name: Clean build environment
+        run: make clean
+
+      - name: Build ZFSWatcher
+        run: make
+
+      - name: Build Tarball
+        run: make dist
+
+      - name: Upload Tarball
+        uses: actions/upload-artifact@v7
+        with:
+          name: ZFSWatcher Tarball
+          path: '*.tar.*'
+
+      - name: Build Debian package
+        run: make deb
+
+      - name: Upload Debian package and changelog
+        uses: actions/upload-artifact@v7
+        with:
+          name: ZFSWatcher DEB and Changelog
+          path: |
+            *.deb
+            *.changes
+
+      - name: Build RPM packages
+        run: make rpm
+
+      - name: Upload RPM packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: ZFSWatcher RPMs
+          path: '*.rpm'
+
+      # Only publish from pushes to contrib, never from pull requests.
+      - name: Publish pre-release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest-dev --cleanup-tag --yes || true
+          gh release create latest-dev --prerelease --draft \
+            --target "$GITHUB_SHA" --title "Development Build" \
+            --notes "Automatic development build of $GITHUB_SHA" \
+            *.rpm *.deb

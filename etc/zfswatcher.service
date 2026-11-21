@@ -26,9 +26,13 @@ LogsDirectory=zfswatcher
 Restart=on-failure
 RestartSec=5
 
-# Port 80 for the web interface without being root.
-AmbientCapabilities=CAP_NET_BIND_SERVICE
-CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+# The web interface listens on an unprivileged port by default (see "bind" in
+# the configuration). To use a port below 1024 without being root, run
+# "systemctl edit zfswatcher" and add:
+#
+#   [Service]
+#   AmbientCapabilities=CAP_NET_BIND_SERVICE
+#   CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 
 # Hardening. The daemon only runs zpool/zfs, reads their output and writes logs.
 NoNewPrivileges=yes

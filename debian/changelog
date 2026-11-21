@@ -1,3 +1,18 @@
+zfswatcher (0.5.0-1) unstable; urgency=medium
+
+  * New version 0.5.0, first release of the tantefred fork.
+  * Build with Go modules instead of GOPATH and the bundled golibs/.
+  * Parse the output of current OpenZFS (2.x): "0B" sizes, remove:,
+    checkpoint:, expand: and condense: sections, several scan: lines,
+    dedup/special/logs/cache/spares vdev classes, dRAID and the file list
+    of "zpool status -v".
+  * Fix wrong format arguments in the device state change notifications.
+  * Add tests with fixtures from Proxmox VE and Debian 13, and a CI pipeline
+    with lint, format, race-detector tests and vulnerability checks.
+  * Use debhelper-compat 13 and Standards-Version 4.7.4.
+
+ -- tantefred <147740857+tantefred@users.noreply.github.com>  Sat, 21 Nov 2026 22:22:39 +0100
+
 zfswatcher (0.4.7-1) unstable; urgency=medium
 
   * New version 0.4.7

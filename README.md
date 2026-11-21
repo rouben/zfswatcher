@@ -72,8 +72,8 @@ from source for other reasons, you can follow these instructions.
 This software is implemented in the Go programming language. See
 <https://golang.org/doc/install> for how to install the Go environment.
 
-The `Makefile` fetches the dependencies with `go get` and uses the bundled
-libraries in the `golibs` directory.
+Dependencies are managed with Go modules (see `go.mod`) and are downloaded
+automatically on the first build.
 
 
 ### Compiling

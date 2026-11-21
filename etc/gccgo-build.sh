@@ -39,7 +39,7 @@ compile_go_package github.com/ogier/pflag \
 	flag.go
 compile_go_package github.com/snabb/smtp \
 	smtp.go auth.go
-compile_go_package github.com/damicon/zfswatcher/notifier \
+compile_go_package github.com/tantefred/zfswatcher/notifier \
 	notifier.go facility.go severity.go msg.go logger_*.go
 
 set -x

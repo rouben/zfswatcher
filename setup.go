@@ -24,7 +24,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/damicon/zfswatcher/notifier"
+	"github.com/tantefred/zfswatcher/notifier"
 	"github.com/ogier/pflag"
 	"gopkg.in/gcfg.v1"
 	"os"

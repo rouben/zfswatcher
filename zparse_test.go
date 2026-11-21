@@ -216,3 +216,53 @@ func TestZpoolIostatParserInvalidRow(t *testing.T) {
 		t.Errorf("expected nil for malformed row, got %v", got)
 	}
 }
+
+func TestParseZpoolStatusProxmox(t *testing.T) {
+	// Output of OpenZFS 2.x as shipped with Proxmox VE (three pools; device
+	// serial numbers anonymized).
+	pools, err := parseZpoolStatus(readFixture(t, "zpool-status-proxmox.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pools) != 3 {
+		t.Fatalf("got %d pools, want 3", len(pools))
+	}
+	names := []string{"datis", "rpool", "secundus"}
+	devCounts := []int{1 + 1 + 3, 1 + 1 + 2, 1 + 1 + 4}
+	for i, p := range pools {
+		if p.name != names[i] {
+			t.Errorf("pool %d name = %q, want %q", i, p.name, names[i])
+		}
+		if p.state != "ONLINE" || p.errors != "No known data errors" {
+			t.Errorf("pool %s: state=%q errors=%q", p.name, p.state, p.errors)
+		}
+		if !strings.HasPrefix(p.scan, "scrub repaired 0B in") {
+			t.Errorf("pool %s: unexpected scan %q", p.name, p.scan)
+		}
+		if got := len(p.devs); got != devCounts[i] {
+			t.Errorf("pool %s has %d devs, want %d", p.name, got, devCounts[i])
+		}
+	}
+
+	datis := pools[0]
+	if !strings.HasPrefix(datis.status, "Some supported and requested features are not enabled") ||
+		!strings.Contains(datis.status, "\nThe pool can still be used") {
+		t.Errorf("datis: unexpected status %q", datis.status)
+	}
+	if !strings.HasPrefix(datis.action, "Enable all features using 'zpool upgrade'.") ||
+		!strings.HasSuffix(datis.action, "zpool-features(7) for details.") {
+		t.Errorf("datis: unexpected action %q", datis.action)
+	}
+	if pools[1].status != "" || pools[1].action != "" {
+		t.Errorf("rpool should have no status/action: %q / %q", pools[1].status, pools[1].action)
+	}
+
+	// device tree of the rpool mirror (long device names, partition suffix)
+	rpool := pools[1].devs
+	if rpool[1].name != "mirror-0" || len(rpool[1].subDevs) != 2 {
+		t.Errorf("unexpected mirror: %+v", rpool[1])
+	}
+	if got := rpool[2].name; got != "ata-SanDisk_SSD_PLUS_120GB_201911A0000A-part3" {
+		t.Errorf("unexpected device name %q", got)
+	}
+}

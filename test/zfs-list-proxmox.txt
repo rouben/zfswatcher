@@ -1,0 +1,3 @@
+datis	8.57T	6.08T	6.19T	0B	128K	0B	6.08T	128K	/datis	1.02x
+rpool	75.0G	31.1G	53.5G	0B	104K	0B	31.1G	104K	/rpool	1.79x
+secundus	10.4T	91.3G	91.8G	0B	140K	0B	91.3G	140K	/secundus	1.03x

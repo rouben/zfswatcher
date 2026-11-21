@@ -29,6 +29,8 @@ func TestUnniceNumber(t *testing.T) {
 		want int64
 	}{
 		{"0", 0},
+		{"0B", 0},
+		{"512B", 512},
 		{"42", 42},
 		{"1K", 1024},
 		{"1.5K", 1536},
@@ -264,5 +266,52 @@ func TestParseZpoolStatusProxmox(t *testing.T) {
 	}
 	if got := rpool[2].name; got != "ata-SanDisk_SSD_PLUS_120GB_201911A0000A-part3" {
 		t.Errorf("unexpected device name %q", got)
+	}
+}
+
+func TestParseZfsListProxmox(t *testing.T) {
+	// OpenZFS 2.x prints zero sizes as "0B".
+	usage := parseZfsList(readFixture(t, "zfs-list-proxmox.txt"))
+	if len(usage) != 3 {
+		t.Fatalf("got %d entries, want 3", len(usage))
+	}
+	rpool := usage["rpool"]
+	if rpool == nil {
+		t.Fatal("pool rpool not found")
+	}
+	if rpool.Usedsnap != 0 || rpool.Usedrefreserv != 0 {
+		t.Errorf("0B must parse as 0, got usedsnap=%d usedrefreserv=%d", rpool.Usedsnap, rpool.Usedrefreserv)
+	}
+	if want := unniceNumber("53.5G"); rpool.Logicalused != want {
+		t.Errorf("Logicalused = %d, want %d", rpool.Logicalused, want)
+	}
+	if rpool.Mountpoint != "/rpool" || rpool.Compressratio != "1.79x" {
+		t.Errorf("unexpected rpool entry: %+v", rpool)
+	}
+	if got := rpool.GetUsedPercent(); got != 29 {
+		t.Errorf("rpool used percent = %d, want 29", got)
+	}
+}
+
+func TestZpoolIostatParserVerboseProxmox(t *testing.T) {
+	table := ZpoolIostatParser(readFixture(t, "zpool-iostat-v-proxmox.txt"))
+	if table == nil {
+		t.Fatal("parser returned nil")
+	}
+	if len(*table) != 3 {
+		t.Fatalf("got %d pools, want 3", len(*table))
+	}
+	rpool := (*table)["rpool"]
+	if got := len(rpool); got != 4 { // pool, mirror and two devices
+		t.Errorf("rpool has %d rows, want 4", got)
+	}
+	if row := rpool["sdi3"]; row == nil || row.OperationsRead != 24 || row.CapacityAlloc != -1 {
+		t.Errorf("unexpected sdi3 row: %+v", row)
+	}
+	if row := (*table)["secundus"]["secundus"]; row == nil || row.CapacityFree != unniceNumber("14.4T") {
+		t.Errorf("unexpected secundus row: %+v", row)
+	}
+	if got := len((*table)["secundus"]); got != 6 {
+		t.Errorf("secundus has %d rows, want 6", got)
 	}
 }

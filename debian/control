@@ -1,10 +1,10 @@
 Source: zfswatcher
 Section: utils
-Priority: extra
-Maintainer: Rouben <rouben@rouben.net>
-Build-Depends: debhelper (>= 8.0.0)
-Standards-Version: 3.9.3
-Homepage: http://zfswatcher.damicon.fi/
+Priority: optional
+Maintainer: tantefred <147740857+tantefred@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.4
+Homepage: https://github.com/tantefred/zfswatcher
 
 Package: zfswatcher
 Architecture: amd64

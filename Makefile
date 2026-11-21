@@ -45,6 +45,15 @@ VERSION		= $(shell fgrep VERSION version.go | cut -d\" -f2)
 # CI builds the code under test; use REF=$(VERSION) to archive the release tag.
 REF		?= HEAD
 
+# On Linux build a static, pure Go binary. The C parts of the Go runtime that
+# cgo would add are compiled with the CPU flags of the build machine; the CI
+# runner's compiler emitted AVX instructions, which crash with "Illegal
+# instruction" on virtual CPUs without AVX (e.g. QEMU's default CPU type).
+# Only the FreeBSD port needs cgo.
+ifeq ($(shell $(GO) env GOOS),linux)
+export CGO_ENABLED = 0
+endif
+
 # Rules:
 all: zfswatcher
 

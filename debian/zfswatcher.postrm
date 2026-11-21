@@ -30,8 +30,9 @@ case "$1" in
 esac
 
 if [ "$1" = "purge" ] ; then
-	rm -f /var/log/zfswatcher.log*
-	rm -f /var/run/zfswatcher.pid
+	rm -rf /var/log/zfswatcher
+	rm -f /var/log/zfswatcher.log* /var/run/zfswatcher.pid
+	# The system user is kept on purpose: files it owns may still exist.
 fi
 
 # dh_installdeb will replace this with shell code automatically

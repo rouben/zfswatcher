@@ -54,7 +54,7 @@ func (n *Notifier) loggerFile(ch chan *Msg, filename string) {
 				continue
 			}
 			_, err = f.WriteString(">" +
-				strings.Replace(strings.TrimRight(m.Text, "\n"), "\n", "\n>", -1) +
+				strings.ReplaceAll(strings.TrimRight(m.Text, "\n"), "\n", "\n>") +
 				"\n")
 			checkInternalError("error writing log file", err)
 		case MSGTYPE_REOPEN:

@@ -234,7 +234,7 @@ func parseZpoolStatus(zpoolStatusOutput string) (pools []*PoolType, err error) {
 	var confstr string
 	var poolinfostr string
 
-	var s zpoolStatusParserState = stSTART
+	s := stSTART
 
 	for lineno, line := range strings.Split(zpoolStatusOutput, "\n") {
 		poolinfostr += line + "\n"

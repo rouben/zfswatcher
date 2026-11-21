@@ -37,7 +37,7 @@ func connectSyslog(address string) (net.Conn, bool, error) {
 	conntype := "udp"
 	sep := false // this is needed later if SOCK_STREAM connections are implemented
 
-	if strings.Index(address, "/") != -1 {
+	if strings.Contains(address, "/") {
 		conntype = "unixgram" // XXX should try different types?
 	}
 	var c net.Conn
@@ -66,7 +66,7 @@ func (n *Notifier) loggerSyslog(ch chan *Msg, address string, facility SyslogFac
 	var c net.Conn
 	var sep bool
 	var err error
-	var connected bool = false
+	connected := false
 
 	c, sep, err = connectSyslog(address)
 	if err == nil {
@@ -117,7 +117,6 @@ func (n *Notifier) loggerSyslog(ch chan *Msg, address string, facility SyslogFac
 	}
 	if connected {
 		c.Close()
-		connected = false
 	}
 }
 

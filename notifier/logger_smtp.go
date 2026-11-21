@@ -39,7 +39,7 @@ func (n *Notifier) sendEmailSMTP(server, username, password, from, to, subject, 
 		"To: " + strings.Join(strings.Fields(to), ", ") + "\r\n" +
 		"Date: " + time.Now().Format(time.RFC1123Z) + "\r\n" +
 		"Subject: " + subject + "\r\n" +
-		"\r\n" + strings.Replace(text, "\n", "\r\n", -1) + "\r\n"
+		"\r\n" + strings.ReplaceAll(text, "\n", "\r\n") + "\r\n"
 
 	if username != "" {
 		host, _, err := net.SplitHostPort(server)
@@ -65,12 +65,10 @@ func makeEmailText(mbuf, abuf []string) (text string) {
 	if mbuf != nil {
 		text += strings.Join(mbuf, "\n")
 		text += "\n"
-		mbuf = nil
 	}
 	if abuf != nil {
 		text += strings.Join(abuf, "\n")
 		text += "\n"
-		abuf = nil
 	}
 	return text
 }
@@ -113,7 +111,7 @@ func (n *Notifier) loggerEmailSMTP(ch chan *Msg, server, username, password, fro
 			}
 		case MSGTYPE_ATTACHMENT:
 			abuf = append(abuf, ">"+
-				strings.Replace(strings.TrimRight(m.Text, "\n"), "\n", "\n>", -1)+"\n")
+				strings.ReplaceAll(strings.TrimRight(m.Text, "\n"), "\n", "\n>")+"\n")
 		case MSGTYPE_FLUSH:
 			if len(mbuf) == 0 && len(abuf) == 0 {
 				continue

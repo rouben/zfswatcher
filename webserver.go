@@ -23,13 +23,14 @@ package main
 
 import (
 	"fmt"
-	auth "github.com/abbot/go-http-auth"
-	"github.com/tantefred/zfswatcher/notifier"
 	"html/template"
 	"math/rand"
 	"net/http"
 	"strings"
 	"time"
+
+	auth "github.com/abbot/go-http-auth"
+	"github.com/tantefred/zfswatcher/notifier"
 )
 
 func getUserSecret(username, realm string) string {

@@ -30,13 +30,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/tantefred/zfswatcher/notifier"
 	"os"
 	"os/signal"
 	"runtime"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/tantefred/zfswatcher/notifier"
 )
 
 // Other global variables.

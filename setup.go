@@ -24,12 +24,13 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/spf13/pflag"
-	"github.com/tantefred/zfswatcher/notifier"
-	"gopkg.in/gcfg.v1"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/spf13/pflag"
+	"github.com/tantefred/zfswatcher/notifier"
+	"gopkg.in/gcfg.v1"
 )
 
 // Config file processing.

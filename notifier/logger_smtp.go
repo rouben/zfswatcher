@@ -23,11 +23,12 @@ package notifier
 
 import (
 	"errors"
-	"github.com/snabb/smtp"
 	"net"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/snabb/smtp"
 )
 
 func (n *Notifier) sendEmailSMTP(server, username, password, from, to, subject, text string) {

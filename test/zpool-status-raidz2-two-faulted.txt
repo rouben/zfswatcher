@@ -1,0 +1,18 @@
+  pool: zfsw_rz2
+ state: DEGRADED
+status: One or more devices are faulted in response to persistent errors.
+	Sufficient replicas exist for the pool to continue functioning in a
+	degraded state.
+action: Replace the faulted device, or use 'zpool clear' to mark the device
+	repaired.
+config:
+
+	NAME                           STATE     READ WRITE CKSUM
+	zfsw_rz2                       DEGRADED     0     0     0
+	  raidz2-0                     DEGRADED     0     0     0
+	    /var/tmp/zfsw-collect2/z1  FAULTED      0     0     0  external device fault
+	    /var/tmp/zfsw-collect2/z2  FAULTED      0     0     0  external device fault
+	    /var/tmp/zfsw-collect2/z3  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/z4  ONLINE       0     0     0
+
+errors: No known data errors

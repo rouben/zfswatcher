@@ -1,0 +1,61 @@
+  pool: zfsw_draid
+ state: DEGRADED
+status: One or more devices are faulted in response to persistent errors.
+	Sufficient replicas exist for the pool to continue functioning in a
+	degraded state.
+action: Replace the faulted device, or use 'zpool clear' to mark the device
+	repaired.
+  scan: scrub in progress since Sat Nov 21 22:14:30 2026
+	75.3M / 75.5M scanned, 75.2M / 75.4M issued at 6.83M/s
+	0B repaired, 99.77% done, no estimated completion time
+  scan: resilvered (draid1:2d:5c:1s-0) 16.0M in 00:00:15 with 0 errors on Sat Nov 21 22:14:30 2026
+config:
+
+	NAME                             STATE     READ WRITE CKSUM
+	zfsw_draid                       DEGRADED     0     0     0
+	  draid1:2d:5c:1s-0              DEGRADED     0     0     0
+	    /var/tmp/zfsw-collect2/d1    ONLINE       0     0     0
+	    spare-1                      DEGRADED     0     0     0
+	      /var/tmp/zfsw-collect2/d2  FAULTED      0     0     0  external device fault
+	      draid1-0-0                 ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/d3    ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/d4    ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/d5    ONLINE       0     0     0
+	spares
+	  draid1-0-0                     INUSE     currently in use
+
+errors: No known data errors
+
+  pool: zfsw_rz2
+ state: DEGRADED
+status: One or more devices are faulted in response to persistent errors.
+	Sufficient replicas exist for the pool to continue functioning in a
+	degraded state.
+action: Replace the faulted device, or use 'zpool clear' to mark the device
+	repaired.
+config:
+
+	NAME                           STATE     READ WRITE CKSUM
+	zfsw_rz2                       DEGRADED     0     0     0
+	  raidz2-0                     DEGRADED     0     0     0
+	    /var/tmp/zfsw-collect2/z1  FAULTED      0     0     0  external device fault
+	    /var/tmp/zfsw-collect2/z2  FAULTED      0     0     0  external device fault
+	    /var/tmp/zfsw-collect2/z3  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/z4  ONLINE       0     0     0
+
+errors: No known data errors
+
+  pool: zfsw_rz3
+ state: ONLINE
+config:
+
+	NAME                           STATE     READ WRITE CKSUM
+	zfsw_rz3                       ONLINE       0     0     0
+	  raidz3-0                     ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/y1  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/y2  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/y3  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/y4  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/y5  ONLINE       0     0     0
+
+errors: No known data errors

@@ -65,9 +65,9 @@ func (n *Notifier) dispatcher() {
 		// forward the message to relevant loggers
 		for _, out := range n.out {
 			switch {
-			case m.MsgType == MSGTYPE_ATTACHMENT && out.attachment == false:
+			case m.MsgType == MSGTYPE_ATTACHMENT && !out.attachment:
 				continue
-			case m.MsgType == MSGTYPE_FLUSH && out.flush == false:
+			case m.MsgType == MSGTYPE_FLUSH && !out.flush:
 				continue
 			case m.Severity <= out.severity:
 				// the zero value of Severity is EMERG, thus

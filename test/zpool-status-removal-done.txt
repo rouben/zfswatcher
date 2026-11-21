@@ -1,0 +1,13 @@
+  pool: zfsw_rem
+ state: ONLINE
+remove: Removal of vdev 1 copied 206M in 0h2m, completed on Sat Nov 21 21:07:29 2026
+	504 memory used for removed device mappings
+config:
+
+	NAME                          STATE     READ WRITE CKSUM
+	zfsw_rem                      ONLINE       0     0     0
+	  mirror-0                    ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/r1  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/r2  ONLINE       0     0     0
+
+errors: No known data errors

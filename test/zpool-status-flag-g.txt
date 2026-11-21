@@ -1,0 +1,11 @@
+  pool: zfsw_opt
+ state: ONLINE
+config:
+
+	NAME                      STATE     READ WRITE CKSUM
+	zfsw_opt                  ONLINE       0     0     0
+	  13093892248541598013    ONLINE       0     0     0
+	    14472808773214427843  ONLINE       0     0     0
+	    5026051920062145897   ONLINE       0     0     0
+
+errors: No known data errors

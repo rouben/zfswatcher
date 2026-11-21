@@ -4,7 +4,7 @@
 
 [Unit]
 Description=ZFS monitoring daemon
-Documentation=man:zfswatcher(8) http://zfswatcher.damicon.fi/
+Documentation=man:zfswatcher(8) https://github.com/tantefred/zfswatcher
 After=zfs-import-cache.service
 After=zfs-import-scan.service
 

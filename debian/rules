@@ -9,5 +9,19 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+# debhelper (compat 13) points HOME into debian/.debhelper, so Go downloads its
+# module cache there. Go makes that cache read-only by default, which makes the
+# final "rm -rf debian/.debhelper" of dh_clean fail with "Permission denied".
+export GOFLAGS += -modcacherw
+
 %:
-	dh $@ 
+	dh $@
+
+# Safety net for a read-only cache left behind by an earlier run.
+override_dh_clean:
+	-chmod -R u+w debian/.debhelper
+	dh_clean
+
+# Go binaries carry compressed DWARF sections, which dwz cannot process
+# ("Found compressed .debug_abbrev section"). Skip dwz, as Go packages do.
+override_dh_dwz:

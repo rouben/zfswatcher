@@ -1,9 +1,10 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: zfswatcher
-Source: http://zfswatcher.damicon.fi/
+Source: https://github.com/tantefred/zfswatcher
 
 Files: *
 Copyright: 2012, 2013 Damicon Kraa Oy
+           2026 tantefred (fork changes)
 License: GPL-3.0+
  Zfswatcher is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -21,19 +22,11 @@ License: GPL-3.0+
  On Debian systems, the complete text of the GNU General
  Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
 
-Files: golibs/src/code.google.com/p/gcfg/*
-Copyright: 2012 Péter Surányi
-           2009 The Go Authors
-License: BSD-2-clause and BSD-3-clause
-
-Files: golibs/src/github.com/abbot/go-http-auth/*
-Copyright: 2012-2013 Lev Shamardin
-License: Apache-2.0
-
-Files: golibs/src/github.com/ogier/pflag/*
-Copyright: 2012 Alex Ogier
-           2012 The Go Authors
-License: BSD-2-clause
+# Go modules compiled into the binary (not shipped as source):
+#  - github.com/abbot/go-http-auth  2012-2013 Lev Shamardin, Apache-2.0
+#  - gopkg.in/gcfg.v1               2012 Péter Surányi, 2009 The Go Authors, BSD-3-clause
+#  - github.com/spf13/pflag         2012 Alex Ogier, 2012 The Go Authors, BSD-3-clause
+#  - github.com/snabb/smtp          2012, upstream ships no license file (to be replaced)
 
 Files: www/resources/bootstrap/js/* www/resources/bootstrap/css/*
 Copyright: 2012 Twitter, Inc

@@ -3,6 +3,31 @@
                            version history
 
 
+version 0.5.0 released 2026-11-21
+
+ - First release of the tantefred fork. Linux (Debian, Proxmox VE) first.
+
+ - Builds with Go modules; the bundled golibs/ directory is gone.
+
+ - Understands current OpenZFS (2.x) output: "0B" sizes, remove:, checkpoint:,
+   expand: and condense: sections, scrub and resilver reported together,
+   special, dedup, log, cache and spare classes, dRAID, and the file list of
+   "zpool status -v".
+
+ - Fixed wrong arguments in the "device state changed" notifications.
+
+ - External commands (zpool, zfs) are killed after 60 seconds, so a hanging
+   "zpool status" no longer stops the monitoring.
+
+ - Pools in state SUSPENDED now raise an alert. If you maintain your own
+   /etc/zfs/zfswatcher.conf, add SUSPENDED:alert to "poolstatemap" and
+   SUSPENDED:text-error to "poolstatecssclassmap"; states missing from these
+   maps are treated as severity info.
+
+ - Test suite with real Proxmox VE and Debian 13 fixtures, CI with lint,
+   formatting, race detector and vulnerability checks.
+
+
 version 0.3 released 2013-02-20
 
  - Disk space usage warnings at configurable thresholds.

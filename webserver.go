@@ -27,7 +27,6 @@ import (
 	"math/rand"
 	"net/http"
 	"strings"
-	"time"
 
 	auth "github.com/abbot/go-http-auth"
 	"github.com/tantefred/zfswatcher/notifier"
@@ -103,7 +102,6 @@ func wwwHashPassword() {
 		fmt.Println("Error:", err)
 		return
 	}
-	rand.Seed(time.Now().UnixNano())
 
 	base64alpha := "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 	var salt []byte

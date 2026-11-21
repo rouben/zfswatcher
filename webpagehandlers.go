@@ -273,7 +273,7 @@ func statusHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 
 	pool := r.URL.Path[len(cfg.Www.Rootdir+"/status/"):]
 
-	if !legalPoolName(pool) && !(pool == "") {
+	if !legalPoolName(pool) && pool != "" {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}

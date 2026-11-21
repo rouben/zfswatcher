@@ -1,0 +1,16 @@
+  pool: zfsw_rem
+ state: ONLINE
+remove: Evacuation of mirror in progress since Sat Nov 21 21:05:13 2026
+	206M copied out of 206M at 1.66M/s, 100.00% done, 0h0m to go
+config:
+
+	NAME                          STATE     READ WRITE CKSUM
+	zfsw_rem                      ONLINE       0     0     0
+	  mirror-0                    ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/r1  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/r2  ONLINE       0     0     0
+	  mirror-1                    ONLINE       0     0     0  (removing)
+	    /var/tmp/zfsw-collect/r3  ONLINE       0     0     0  (non-allocating)
+	    /var/tmp/zfsw-collect/r4  ONLINE       0     0     0  (non-allocating)
+
+errors: No known data errors

@@ -22,6 +22,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -36,10 +37,24 @@ import (
 	"github.com/tantefred/zfswatcher/notifier"
 )
 
+// How long an external command may run before it is killed. A hanging
+// "zpool status" (for example on a suspended pool) must not block the
+// monitoring forever. It is a variable so that tests can shorten it.
+var commandTimeout = 60 * time.Second
+
 // Run external command and capture output.
 func getCommandOutput(cmdstr string) (string, error) {
-	cmd := strings.Fields(cmdstr)
-	out, err := exec.Command(cmd[0], cmd[1:]...).CombinedOutput()
+	cmdf := strings.Fields(cmdstr)
+	ctx, cancel := context.WithTimeout(context.Background(), commandTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, cmdf[0], cmdf[1:]...)
+	// Do not wait forever for the output pipes if the killed process (or a
+	// child of it) still holds them open.
+	cmd.WaitDelay = 5 * time.Second
+	out, err := cmd.CombinedOutput()
+	if ctx.Err() == context.DeadlineExceeded {
+		err = fmt.Errorf("timed out after %s: %w", commandTimeout, err)
+	}
 	if err != nil {
 		notify.Print(notifier.CRIT,
 			`running "`, cmdstr, `" failed: `, err)
@@ -102,6 +117,8 @@ func unniceNumber(str string) int64 {
 	if str == "-" {
 		return -1
 	}
+	// OpenZFS 2.x prints plain byte counts with a "B" suffix, e.g. "0B".
+	str = strings.TrimSuffix(str, "B")
 	var mul string
 	if mulpos := strings.IndexAny(str, "KMGTPE"); mulpos >= 0 {
 		mul = str[mulpos : mulpos+1]

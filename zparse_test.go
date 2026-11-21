@@ -29,6 +29,8 @@ func TestUnniceNumber(t *testing.T) {
 		want int64
 	}{
 		{"0", 0},
+		{"0B", 0},
+		{"512B", 512},
 		{"42", 42},
 		{"1K", 1024},
 		{"1.5K", 1536},
@@ -214,5 +216,136 @@ func TestZpoolIostatParserInvalidRow(t *testing.T) {
 	in := "header\n------  -----\ntank 1 2\n"
 	if got := ZpoolIostatParser(in); got != nil {
 		t.Errorf("expected nil for malformed row, got %v", got)
+	}
+}
+
+func TestParseZpoolStatusProxmox(t *testing.T) {
+	// Output of OpenZFS 2.x as shipped with Proxmox VE (three pools; device
+	// serial numbers anonymized).
+	pools, err := parseZpoolStatus(readFixture(t, "zpool-status-proxmox.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pools) != 3 {
+		t.Fatalf("got %d pools, want 3", len(pools))
+	}
+	names := []string{"datis", "rpool", "secundus"}
+	devCounts := []int{1 + 1 + 3, 1 + 1 + 2, 1 + 1 + 4}
+	for i, p := range pools {
+		if p.name != names[i] {
+			t.Errorf("pool %d name = %q, want %q", i, p.name, names[i])
+		}
+		if p.state != "ONLINE" || p.errors != "No known data errors" {
+			t.Errorf("pool %s: state=%q errors=%q", p.name, p.state, p.errors)
+		}
+		if !strings.HasPrefix(p.scan, "scrub repaired 0B in") {
+			t.Errorf("pool %s: unexpected scan %q", p.name, p.scan)
+		}
+		if got := len(p.devs); got != devCounts[i] {
+			t.Errorf("pool %s has %d devs, want %d", p.name, got, devCounts[i])
+		}
+	}
+
+	datis := pools[0]
+	if !strings.HasPrefix(datis.status, "Some supported and requested features are not enabled") ||
+		!strings.Contains(datis.status, "\nThe pool can still be used") {
+		t.Errorf("datis: unexpected status %q", datis.status)
+	}
+	if !strings.HasPrefix(datis.action, "Enable all features using 'zpool upgrade'.") ||
+		!strings.HasSuffix(datis.action, "zpool-features(7) for details.") {
+		t.Errorf("datis: unexpected action %q", datis.action)
+	}
+	if pools[1].status != "" || pools[1].action != "" {
+		t.Errorf("rpool should have no status/action: %q / %q", pools[1].status, pools[1].action)
+	}
+
+	// device tree of the rpool mirror (long device names, partition suffix)
+	rpool := pools[1].devs
+	if rpool[1].name != "mirror-0" || len(rpool[1].subDevs) != 2 {
+		t.Errorf("unexpected mirror: %+v", rpool[1])
+	}
+	if got := rpool[2].name; got != "ata-SanDisk_SSD_PLUS_120GB_201911A0000A-part3" {
+		t.Errorf("unexpected device name %q", got)
+	}
+}
+
+func TestParseZfsListProxmox(t *testing.T) {
+	// OpenZFS 2.x prints zero sizes as "0B".
+	usage := parseZfsList(readFixture(t, "zfs-list-proxmox.txt"))
+	if len(usage) != 3 {
+		t.Fatalf("got %d entries, want 3", len(usage))
+	}
+	rpool := usage["rpool"]
+	if rpool == nil {
+		t.Fatal("pool rpool not found")
+	}
+	if rpool.Usedsnap != 0 || rpool.Usedrefreserv != 0 {
+		t.Errorf("0B must parse as 0, got usedsnap=%d usedrefreserv=%d", rpool.Usedsnap, rpool.Usedrefreserv)
+	}
+	if want := unniceNumber("53.5G"); rpool.Logicalused != want {
+		t.Errorf("Logicalused = %d, want %d", rpool.Logicalused, want)
+	}
+	if rpool.Mountpoint != "/rpool" || rpool.Compressratio != "1.79x" {
+		t.Errorf("unexpected rpool entry: %+v", rpool)
+	}
+	if got := rpool.GetUsedPercent(); got != 29 {
+		t.Errorf("rpool used percent = %d, want 29", got)
+	}
+}
+
+func TestZpoolIostatParserVerboseProxmox(t *testing.T) {
+	table := ZpoolIostatParser(readFixture(t, "zpool-iostat-v-proxmox.txt"))
+	if table == nil {
+		t.Fatal("parser returned nil")
+	}
+	if len(*table) != 3 {
+		t.Fatalf("got %d pools, want 3", len(*table))
+	}
+	rpool := (*table)["rpool"]
+	if got := len(rpool); got != 4 { // pool, mirror and two devices
+		t.Errorf("rpool has %d rows, want 4", got)
+	}
+	if row := rpool["sdi3"]; row == nil || row.OperationsRead != 24 || row.CapacityAlloc != -1 {
+		t.Errorf("unexpected sdi3 row: %+v", row)
+	}
+	if row := (*table)["secundus"]["secundus"]; row == nil || row.CapacityFree != unniceNumber("14.4T") {
+		t.Errorf("unexpected secundus row: %+v", row)
+	}
+	if got := len((*table)["secundus"]); got != 6 {
+		t.Errorf("secundus has %d rows, want 6", got)
+	}
+}
+
+func TestParseZfsListAllProxmox(t *testing.T) {
+	// zfs list -r -t all: datasets, container volumes and snapshots.
+	usage := parseZfsList(readFixture(t, "zfs-list-all-proxmox.txt"))
+	if len(usage) != 31 {
+		t.Fatalf("got %d entries, want 31", len(usage))
+	}
+	snaps := 0
+	for name, u := range usage {
+		if strings.Contains(name, "@") {
+			snaps++
+			if u.Avail != -1 || u.Logicalused != -1 || u.Mountpoint != "-" {
+				t.Errorf("snapshot %s: unexpected entry %+v", name, u)
+			}
+		}
+	}
+	if snaps != 8 {
+		t.Errorf("got %d snapshots, want 8", snaps)
+	}
+
+	vol := usage["rpool/data/subvol-100-disk-0"]
+	if vol == nil {
+		t.Fatal("subvol-100-disk-0 not found")
+	}
+	if want := unniceNumber("587M"); vol.Usedsnap != want {
+		t.Errorf("Usedsnap = %d, want %d", vol.Usedsnap, want)
+	}
+	if usage["rpool/ROOT/pve-1"].Mountpoint != "/" {
+		t.Errorf("root dataset mountpoint = %q", usage["rpool/ROOT/pve-1"].Mountpoint)
+	}
+	if got := usage["datis/Daten"].Mountpoint; got != "/mnt/Daten" {
+		t.Errorf("datis/Daten mountpoint = %q", got)
 	}
 }

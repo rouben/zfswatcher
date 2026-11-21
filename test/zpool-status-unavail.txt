@@ -1,0 +1,15 @@
+  pool: zfsw_un
+ state: DEGRADED
+status: One or more devices could not be opened.  Sufficient replicas exist for
+	the pool to continue functioning in a degraded state.
+action: Attach the missing device and online it using 'zpool online'.
+   see: https://openzfs.github.io/openzfs-docs/msg/ZFS-8000-2Q
+config:
+
+	NAME                          STATE     READ WRITE CKSUM
+	zfsw_un                       DEGRADED     0     0     0
+	  mirror-0                    DEGRADED     0     0     0
+	    /var/tmp/zfsw-collect/u1  ONLINE       0     0     0
+	    14974271720844242149      UNAVAIL      0     0     0  was /var/tmp/zfsw-collect/u2
+
+errors: No known data errors

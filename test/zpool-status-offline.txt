@@ -1,0 +1,16 @@
+  pool: zfsw_mirror
+ state: DEGRADED
+status: One or more devices has been taken offline by the administrator.
+	Sufficient replicas exist for the pool to continue functioning in a
+	degraded state.
+action: Online the device using 'zpool online' or replace the device with
+	'zpool replace'.
+config:
+
+	NAME                          STATE     READ WRITE CKSUM
+	zfsw_mirror                   DEGRADED     0     0     0
+	  mirror-0                    DEGRADED     0     0     0
+	    /var/tmp/zfsw-collect/m1  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/m2  OFFLINE      0     0     0
+
+errors: No known data errors

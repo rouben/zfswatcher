@@ -183,6 +183,7 @@ type PoolType struct {
 	devs    []*DevEntry
 	errors  string
 	infostr string
+	extra   string // remove:, checkpoint:, expand: and condense: sections
 }
 
 // Internal parser state for parseZpoolStatus() function.
@@ -196,9 +197,22 @@ const (
 	stACTION
 	stSEE
 	stSCAN
+	stEXTRA
 	stCONFIG
 	stERRORS
+	stERRFILES
 )
+
+// isExtraSectionStart reports whether the line starts one of the optional
+// "zpool status" sections that OpenZFS prints between "scan:" and "config:".
+func isExtraSectionStart(line string) bool {
+	for _, key := range []string{"remove: ", "checkpoint: ", "expand: ", "condense: "} {
+		if strings.HasPrefix(line, key) {
+			return true
+		}
+	}
+	return false
+}
 
 // Parse "zpool status" output.
 func parseZpoolStatus(zpoolStatusOutput string) (pools []*PoolType, err error) {
@@ -220,7 +234,7 @@ func parseZpoolStatus(zpoolStatusOutput string) (pools []*PoolType, err error) {
 	var confstr string
 	var poolinfostr string
 
-	var s zpoolStatusParserState = stSTART
+	s := stSTART
 
 	for lineno, line := range strings.Split(zpoolStatusOutput, "\n") {
 		poolinfostr += line + "\n"
@@ -250,21 +264,36 @@ func parseZpoolStatus(zpoolStatusOutput string) (pools []*PoolType, err error) {
 			line[:8] == "   see: ":
 			curpool.see = line[8:]
 			s = stSEE
-		case (s == stSTATE || s == stACTION || s == stSEE) &&
+		case (s == stSTATE || s == stSTATUS || s == stACTION || s == stSEE) &&
 			len(line) >= 7 && line[:7] == " scan: ":
 			curpool.scan = line[7:]
 			s = stSCAN
 		// fix for 240245896aad46d0d41b0f9f257ff2abd09cb29b
 		// released in zfs-0.6.0-rc14
-		case (s == stSTATE || s == stACTION || s == stSEE) &&
+		case (s == stSTATE || s == stSTATUS || s == stACTION || s == stSEE) &&
 			len(line) >= 8 && line[:8] == "  scan: ":
 			curpool.scan = line[8:]
+			s = stSCAN
+		// a scrub and a resilver can be reported at the same time
+		case (s == stSCAN || s == stEXTRA) && len(line) >= 8 && line[:8] == "  scan: ":
+			curpool.scan += "\n" + line[8:]
 			s = stSCAN
 		case s == stSCAN && len(line) >= 1 && line[:1] == "\t":
 			curpool.scan += "\n" + line[1:]
 		case s == stSCAN && len(line) >= 4 && line[:4] == "    ":
 			curpool.scan += "\n" + line[4:]
-		case (s == stSCAN || s == stSTATE || s == stACTION || s == stSEE) &&
+		// optional sections printed by newer OpenZFS after "scan:"
+		case (s == stSTATE || s == stSTATUS || s == stACTION || s == stSEE ||
+			s == stSCAN || s == stEXTRA) && isExtraSectionStart(line):
+			if curpool.extra != "" {
+				curpool.extra += "\n"
+			}
+			curpool.extra += line
+			s = stEXTRA
+		case s == stEXTRA && len(line) >= 1 && line[:1] == "\t":
+			curpool.extra += "\n" + line[1:]
+		case (s == stSCAN || s == stEXTRA || s == stSTATE || s == stSTATUS ||
+			s == stACTION || s == stSEE) &&
 			len(line) >= 7 && line[:7] == "config:":
 			s = stCONFIG
 			if line[7:] != "" {
@@ -277,7 +306,13 @@ func parseZpoolStatus(zpoolStatusOutput string) (pools []*PoolType, err error) {
 		case s == stCONFIG && len(line) >= 8 && line[:8] == "errors: ":
 			curpool.errors = line[8:]
 			s = stERRORS
-		case s == stERRORS && line == "":
+		case s == stERRORS && line == "" &&
+			strings.HasPrefix(curpool.errors, "Permanent errors"):
+			// "zpool status -v" lists the damaged files after a blank line
+			s = stERRFILES
+		case s == stERRFILES && len(line) >= 1 && line[:1] == " ":
+			curpool.errors += "\n" + strings.TrimSpace(line)
+		case (s == stERRORS || s == stERRFILES) && line == "":
 			// this is the end of a pool!
 			curpool.devs, err = parseConfstr(confstr)
 			if err != nil {

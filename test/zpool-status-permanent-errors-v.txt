@@ -1,0 +1,17 @@
+  pool: zfsw_perm
+ state: ONLINE
+status: One or more devices has experienced an error resulting in data
+	corruption.  Applications may be affected.
+action: Restore the file in question if possible.  Otherwise restore the
+	entire pool from backup.
+   see: https://openzfs.github.io/openzfs-docs/msg/ZFS-8000-8A
+  scan: scrub repaired 170K in 00:00:01 with 223 errors on Sat Nov 21 21:24:41 2026
+config:
+
+	NAME                        STATE     READ WRITE CKSUM
+	zfsw_perm                   ONLINE       0     0     0
+	  /var/tmp/zfsw-collect/p1  ONLINE       0     0   504
+
+errors: Permanent errors have been detected in the following files:
+
+        /zfsw_perm/testdata

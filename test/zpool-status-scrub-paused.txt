@@ -1,0 +1,15 @@
+  pool: zfsw_scrub
+ state: ONLINE
+  scan: scrub paused since Sat Nov 21 22:13:13 2026
+	scrub started on Sat Nov 21 22:13:10 2026
+	0B / 150M scanned, 0B / 150M issued
+	0B repaired, 0.00% done
+config:
+
+	NAME                           STATE     READ WRITE CKSUM
+	zfsw_scrub                     ONLINE       0     0     0
+	  mirror-0                     ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/s1  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect2/s2  ONLINE       0     0     0
+
+errors: No known data errors

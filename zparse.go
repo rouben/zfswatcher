@@ -274,6 +274,10 @@ func parseZpoolStatus(zpoolStatusOutput string) (pools []*PoolType, err error) {
 			len(line) >= 8 && line[:8] == "  scan: ":
 			curpool.scan = line[8:]
 			s = stSCAN
+		// a scrub and a resilver can be reported at the same time
+		case (s == stSCAN || s == stEXTRA) && len(line) >= 8 && line[:8] == "  scan: ":
+			curpool.scan += "\n" + line[8:]
+			s = stSCAN
 		case s == stSCAN && len(line) >= 1 && line[:1] == "\t":
 			curpool.scan += "\n" + line[1:]
 		case s == stSCAN && len(line) >= 4 && line[:4] == "    ":

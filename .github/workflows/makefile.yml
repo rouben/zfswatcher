@@ -17,11 +17,11 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 
@@ -38,7 +38,7 @@ jobs:
         run: make dist
 
       - name: Upload Tarball
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ZFSWatcher Tarball
           path: '*.tar.*'
@@ -47,7 +47,7 @@ jobs:
         run: make deb
 
       - name: Upload Debian package and changelog
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ZFSWatcher DEB and Changelog
           path: |
@@ -58,7 +58,7 @@ jobs:
         run: make rpm
 
       - name: Upload RPM packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ZFSWatcher RPMs
           path: '*.rpm'

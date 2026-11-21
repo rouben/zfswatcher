@@ -261,7 +261,7 @@ func setupLeds(state []*PoolType) {
 func version() {
 	fmt.Println("zfswatcher", VERSION, "- ZFS pool monitoring and notification daemon")
 	fmt.Println("Built with", getGoEnvironment())
-	fmt.Println(`
+	fmt.Print(`
 Copyright © 2012-2013 Damicon Kraa Oy
 
 Zfswatcher is free software: you can redistribute it and/or modify

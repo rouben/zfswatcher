@@ -280,7 +280,7 @@ func parseZpoolStatus(zpoolStatusOutput string) (pools []*PoolType, err error) {
 			// this is the end of a pool!
 			curpool.devs, err = parseConfstr(confstr)
 			if err != nil {
-				notify.Print(notifier.ERR, "device configuration parse error: %s", err)
+				notify.Printf(notifier.ERR, "device configuration parse error: %s", err)
 				notify.Attach(notifier.ERR, confstr)
 			}
 			confstr = ""

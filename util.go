@@ -102,6 +102,8 @@ func unniceNumber(str string) int64 {
 	if str == "-" {
 		return -1
 	}
+	// OpenZFS 2.x prints plain byte counts with a "B" suffix, e.g. "0B".
+	str = strings.TrimSuffix(str, "B")
 	var mul string
 	if mulpos := strings.IndexAny(str, "KMGTPE"); mulpos >= 0 {
 		mul = str[mulpos : mulpos+1]

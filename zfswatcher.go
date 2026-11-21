@@ -289,11 +289,11 @@ func main() {
 	setup()
 
 	// setup signal handlers:
-	sigCexit := make(chan os.Signal)
+	sigCexit := make(chan os.Signal, 1)
 	signal.Notify(sigCexit, syscall.SIGTERM, syscall.SIGINT) // terminate gracefully
-	sigChup := make(chan os.Signal)
+	sigChup := make(chan os.Signal, 1)
 	signal.Notify(sigChup, syscall.SIGHUP) // reopen log files
-	sigCusr1 := make(chan os.Signal)
+	sigCusr1 := make(chan os.Signal, 1)
 	signal.Notify(sigCusr1, syscall.SIGUSR1) // debug output
 
 	// create a pid file if desired, remove it at the end of main()

@@ -1,59 +1,64 @@
 [![Language](https://img.shields.io/badge/language-Go-brightgreen.svg)](https://golang.org/)
-
 ![OS](https://img.shields.io/badge/os-Linux%2C%20FreeBSD%2C%20Solaris%2C%20OpenSolaris%2C%20OpenIndiana-brightgreen.svg)
+[![License](https://img.shields.io/github/license/tantefred/zfswatcher.svg)](COPYING)
+[![Release](https://img.shields.io/github/release/tantefred/zfswatcher.svg)](https://github.com/tantefred/zfswatcher/releases)
+[![GitHub issues](https://img.shields.io/github/issues/tantefred/zfswatcher.svg)](https://github.com/tantefred/zfswatcher/issues)
+[![GitHub forks](https://img.shields.io/github/forks/tantefred/zfswatcher.svg)](https://github.com/tantefred/zfswatcher/network)
+[![GitHub stars](https://img.shields.io/github/stars/tantefred/zfswatcher.svg)](https://github.com/tantefred/zfswatcher/stargazers)
 
-[![License](https://img.shields.io/github/license/rouben/zfswatcher.svg)](COPYING)
-
-[![Release](https://img.shields.io/github/release/rouben/zfswatcher.svg)](https://github.com/rouben/zfswatcher/releases)
-![Downloads](https://img.shields.io/github/downloads/rouben/zfswatcher/latest/total.svg)
-![TotalDownloads](https://img.shields.io/github/downloads/rouben/zfswatcher/total.svg)
-
-[![GitHub issues](https://img.shields.io/github/issues/rouben/zfswatcher.svg)](https://github.com/rouben/zfswatcher/issues)
-[![GitHub forks](https://img.shields.io/github/forks/rouben/zfswatcher.svg)](https://github.com/rouben/zfswatcher/network)
-[![GitHub stars](https://img.shields.io/github/stars/rouben/zfswatcher.svg)](https://github.com/rouben/zfswatcher/stargazers)
-
-zfswatcher
-==========
+# zfswatcher
 
 ZFS pool monitoring and notification daemon.
 
-Please see the project web site for general information about features,
-supported operating environments and to download a tarball or packaged
-version of this software:
+Zfswatcher watches the state of your ZFS pools and notifies you about
+problems by e-mail, syslog or log file. It can also manage enclosure LEDs
+and provides an optional embedded web interface.
 
-http://zfswatcher.damicon.fi/
+Supported operating systems: Linux, FreeBSD and Solaris/Illumos
+(OpenIndiana).
 
-Source repository:
+> **About this fork:** This repository is a fork of
+> [rouben/zfswatcher](https://github.com/rouben/zfswatcher), which itself is
+> based on the original [damicon/zfswatcher](https://github.com/damicon/zfswatcher)
+> by Janne Snabb (Damicon Kraa Oy). See [Credits](#credits).
 
-https://github.com/damicon/zfswatcher/
 
+## Installing and upgrading on Debian/Ubuntu
 
-Installing and upgrading on Debian/Ubuntu
------------------------------------------
+Download the `.deb` package from the
+[releases page](https://github.com/tantefred/zfswatcher/releases) and install
+it with `dpkg`, for example:
 
-Download the .deb package and install it with `dpkg`, for example:
-
-    dpkg -i zfswatcher_0.03-1_amd64.deb
+```sh
+dpkg -i zfswatcher_0.4.7-1_amd64.deb
+```
 
 The service is started by default according to the Debian and Ubuntu
 conventions.
 
+Development builds are published automatically from the `contrib` branch as
+the `latest-dev` pre-release.
 
-Installing and upgrading on RHEL/CentOS/Scientific Linux
---------------------------------------------------------
 
-Download the .rpm package and install it with `yum`, for example:
+## Installing and upgrading on RHEL/CentOS/Scientific Linux
 
-    yum install zfswatcher-0.03-1.x86_64.rpm
+Download the `.rpm` package from the
+[releases page](https://github.com/tantefred/zfswatcher/releases) and install
+it with `yum`, for example:
+
+```sh
+yum install zfswatcher-0.4.7-1.x86_64.rpm
+```
 
 The service is **not** started by default according to Red Hat
 conventions. It can be started as follows:
 
-    service zfswatcher start
+```sh
+service zfswatcher start
+```
 
 
-Installing from source on Linux, FreeBSD and Opensolaris/Illumos
--------------------------------------------
+## Installing from source on Linux, FreeBSD and Solaris/Illumos
 
 Generally it is best to use the ready made packages on Debian/Ubuntu
 and RHEL/CentOS/Scientific Linux.
@@ -64,56 +69,68 @@ from source for other reasons, you can follow these instructions.
 
 ### Prerequisites
 
-This software is implemented in Go programming language. Further
-information about installing the Go environment is available
-at the following URL:
+This software is implemented in the Go programming language. See
+<https://golang.org/doc/install> for how to install the Go environment.
 
-http://golang.org/doc/install
-
-The version 1.0.3 of the Go programming language on a 64 bit platform
-is recommended.
-
-The software has been developed on Debian 6.0 (squeeze) and Ubuntu 12.04
-(precise) but it should work fine on other Linux distributions and also
-recent FreeBSD versions.
+The `Makefile` fetches the dependencies with `go get` and uses the bundled
+libraries in the `golibs` directory.
 
 
 ### Compiling
 
-Optionally edit the Makefile to set the installation directories.
+Optionally edit the `Makefile` to set the installation directories.
 Then run:
 
-    make
+```sh
+make
+```
 
 
 ### Installation
 
-    make install
+```sh
+make install
+```
+
+Other useful targets:
+
+| Target      | Description                       |
+|-------------|-----------------------------------|
+| `make dist` | Build a source tarball            |
+| `make deb`  | Build a Debian package            |
+| `make rpm`  | Build RPM packages                |
+| `make clean`| Remove build results              |
 
 
 ### Running
 
-There are some OS/distribution specific startup scripts in "etc"
-subdirectory. They may be useful.
+There are some OS/distribution specific startup scripts and service
+definitions (systemd, upstart, SMF, ...) in the `etc` subdirectory. They may
+be useful.
 
-See the installed zfswatcher(8) manual page for information on invoking
+See the installed `zfswatcher(8)` manual page for information on invoking
 the zfswatcher process.
 
 
-Configuration
--------------
+## Configuration
 
 Edit the configuration file:
 
-    editor /etc/zfs/zfswatcher.conf
+```sh
+editor /etc/zfs/zfswatcher.conf
+```
 
 Verify the configuration syntax:
 
-    zfswatcher -t
+```sh
+zfswatcher -t
+```
 
 Restart the process:
 
-    service zfswatcher restart
+```sh
+service zfswatcher restart
+```
 
 Some notes:
 
@@ -121,7 +138,7 @@ Some notes:
   settings.
 
 - Enclosure LED management is disabled by default. Currently an external
-  utility `ledctl` (part of ledmon package) is required for this
+  utility `ledctl` (part of the ledmon package) is required for this
   functionality.
 
 - Logging to file `/var/log/zfswatcher/zfswatcher.log` and local syslog
@@ -138,36 +155,34 @@ Some notes:
   package at a later time.
 
 
-Support
--------
+## Support
 
-If you encounter a bug, please open an issue at the GitHub issue
-tracker at:
+If you encounter a bug, please open an issue at the GitHub issue tracker:
 
-https://github.com/damicon/zfswatcher/issues
+<https://github.com/tantefred/zfswatcher/issues>
 
-Reported bugs are fixed on best effort basis.
-
-Commercial support, custom features, custom licensing and complete
-storage solutions are available from Damicon Kraa Oy. Contact
-<zfswatcher-support@damicon.fi>.
+Reported bugs are fixed on a best effort basis.
 
 
-Contributions
--------------
+## Contributions
 
 Contributions and suggestions are welcome. Feel free to open an issue
-or submit a merge request on GitHub.
+or submit a pull request on GitHub. Development happens on the `contrib`
+branch.
 
 
-Authors
--------
+## Credits
 
-Janne Snabb <snabb@epipe.com>
+- Janne Snabb <snabb@epipe.com> - original author
+  ([damicon/zfswatcher](https://github.com/damicon/zfswatcher),
+  [original project site](http://zfswatcher.damicon.fi/))
+- Rouben Tchakhmakhtchian - maintainer of the
+  [rouben/zfswatcher](https://github.com/rouben/zfswatcher) fork
+- Further contributions by slacker87, Paul Koelle, Der-Jan, kopernikus,
+  StripeBanana and others. See the git history for details.
 
 
-License
--------
+## License
 
 Copyright © 2012-2013 Damicon Kraa Oy
 
@@ -183,4 +198,3 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with zfswatcher. If not, see <http://www.gnu.org/licenses/>.
-

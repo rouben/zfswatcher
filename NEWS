@@ -16,6 +16,14 @@ version 0.5.0 released 2026-11-21
 
  - Fixed wrong arguments in the "device state changed" notifications.
 
+ - The Debian package runs the daemon as the unprivileged system user
+   "zfswatcher" with a systemd unit (the SysV init script is gone). The
+   unit creates /var/log/zfswatcher, allows port 80 without root and
+   hardens the service. The bundled zfswatcher-ledctl and its udev rule are
+   installed, so enclosure LEDs work without root. If you use ledctl from the
+   ledmon package, add User=root with "systemctl edit zfswatcher".
+   Logrotate now rotates /var/log/zfswatcher/*.log.
+
  - The Linux binary is static and built without cgo. It no longer crashes
    with "Illegal instruction" on virtual CPUs without AVX.
 

@@ -24,13 +24,13 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"time"
 )
 
 // Returns system uptime as time.Duration.
 func getSystemUptime() (uptime time.Duration, err error) {
-	buf, err := ioutil.ReadFile("/proc/uptime")
+	buf, err := os.ReadFile("/proc/uptime")
 	if err != nil {
 		return uptime, err
 	}
@@ -49,7 +49,7 @@ func getSystemUptime() (uptime time.Duration, err error) {
 
 // Returns system load averages.
 func getSystemLoadaverage() (la [3]float32, err error) {
-	buf, err := ioutil.ReadFile("/proc/loadavg")
+	buf, err := os.ReadFile("/proc/loadavg")
 	if err != nil {
 		return la, err
 	}

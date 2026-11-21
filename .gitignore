@@ -1,4 +1,4 @@
-# Build output (anchored so golibs/.../zfswatcher is not ignored)
+# Build output (anchored so the notifier package etc. are not ignored)
 /zfswatcher
 
 # Release artifacts produced by `make dist`, `make deb` and `make rpm`

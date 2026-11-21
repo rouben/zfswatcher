@@ -22,9 +22,8 @@
 # Shell:
 SHELL	= /bin/sh
 
-# Go tool and library path:
+# Go tool:
 GO	= $(shell which go)
-GOPATH	= $(shell pwd)/golibs:$(shell go env GOPATH)
 
 # Installation directories:
 prefix		= /usr
@@ -46,11 +45,10 @@ VERSION		= $(shell fgrep VERSION version.go | cut -d\" -f2)
 all: zfswatcher
 
 zfswatcher:
-	$(GO) get -d
 	$(GO) build -o $@
 
 clean: 
-	GOPATH=$(GOPATH) $(GO) clean
+	$(GO) clean
 	version=$(VERSION) &&						\
 	rm -f zfswatcher						\
 		zfswatcher-$${version}.tar.gz				\

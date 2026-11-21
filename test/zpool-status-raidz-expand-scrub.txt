@@ -1,0 +1,17 @@
+  pool: zfsw_exp
+ state: ONLINE
+  scan: scrub in progress since Sat Nov 21 21:18:38 2026
+	601M / 601M scanned, 0B / 601M issued
+	0B repaired, 0.00% done, no estimated completion time
+expand: expanded raidz1-0 copied 587M in 00:05:44, on Sat Nov 21 21:18:38 2026
+config:
+
+	NAME                          STATE     READ WRITE CKSUM
+	zfsw_exp                      ONLINE       0     0     0
+	  raidz1-0                    ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/x1  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/x2  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/x3  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/x4  ONLINE       0     0     0
+
+errors: No known data errors

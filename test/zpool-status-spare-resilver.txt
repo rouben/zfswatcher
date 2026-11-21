@@ -1,0 +1,30 @@
+  pool: zfsw_mix
+ state: DEGRADED
+status: One or more devices is currently being resilvered.  The pool will
+	continue to function, possibly in a degraded state.
+action: Wait for the resilver to complete.
+  scan: resilver in progress since Sat Nov 21 21:21:43 2026
+	150M / 150M scanned, 124M / 150M issued at 124M/s
+	25.4M resilvered, 82.65% done, 00:00:00 to go
+config:
+
+	NAME                            STATE     READ WRITE CKSUM
+	zfsw_mix                        DEGRADED     0     0     0
+	  raidz1-0                      DEGRADED     0     0     0
+	    /var/tmp/zfsw-collect/c1    ONLINE       0     0     0
+	    spare-1                     DEGRADED     0     0     0
+	      /var/tmp/zfsw-collect/c2  FAULTED      0     0     0  external device fault
+	      /var/tmp/zfsw-collect/c6  ONLINE       0     0     0  (resilvering)
+	    /var/tmp/zfsw-collect/c3    ONLINE       0     0     0
+	dedup
+	  /var/tmp/zfsw-collect/c8      ONLINE       0     0     0
+	special
+	  /var/tmp/zfsw-collect/c7      ONLINE       0     0     0
+	logs
+	  /var/tmp/zfsw-collect/c4      ONLINE       0     0     0
+	cache
+	  /var/tmp/zfsw-collect/c5      ONLINE       0     0     0
+	spares
+	  /var/tmp/zfsw-collect/c6      INUSE     currently in use
+
+errors: No known data errors

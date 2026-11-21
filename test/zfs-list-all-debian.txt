@@ -1,0 +1,9 @@
+zfsw_mirror	364M	468M	400M	0B	24K	0B	468M	24K	/zfsw_mirror	1.00x
+zfsw_mirror@snap1	-	0B	-	-	-	-	-	24K	-	1.00x
+zfsw_mirror/data	364M	400M	400M	0B	400M	0B	24K	400M	/zfsw_mirror/data	1.00x
+zfsw_mirror/data@snap1	-	0B	-	-	-	-	-	400M	-	1.00x
+zfsw_mirror/data@snap2	-	0B	-	-	-	-	-	400M	-	1.00x
+zfsw_mirror/data/child	364M	24K	12K	0B	24K	0B	0B	24K	/zfsw_mirror/data/child	1.00x
+zfsw_mirror/data/child@snap1	-	0B	-	-	-	-	-	24K	-	1.00x
+zfsw_mirror/vol	431M	67.0M	6K	0B	12K	67M	0B	12K	-	1.00x
+zfsw_mirror/vol@snap1	-	0B	-	-	-	-	-	12K	-	1.00x

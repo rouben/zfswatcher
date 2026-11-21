@@ -1,0 +1,15 @@
+  pool: zfsw_exp
+ state: ONLINE
+expand: expansion of raidz1-0 in progress since Sat Nov 21 21:12:54 2026
+	4.67M / 601M copied at 281K/s, 0.78% done, 00:36:12 to go
+config:
+
+	NAME                          STATE     READ WRITE CKSUM
+	zfsw_exp                      ONLINE       0     0     0
+	  raidz1-0                    ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/x1  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/x2  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/x3  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/x4  ONLINE       0     0     0
+
+errors: No known data errors

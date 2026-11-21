@@ -1,0 +1,17 @@
+                                capacity     operations     bandwidth
+pool                          alloc   free   read  write   read  write
+----------------------------  -----  -----  -----  -----  -----  -----
+zfsw_mix                       150M  4.48G      0      9    800   885K
+  raidz1-0                     150M  2.60G      0      7    400   858K
+    /var/tmp/zfsw-collect/c1      -      -      0      2    133   286K
+    /var/tmp/zfsw-collect/c2      -      -      0      2    133   286K
+    /var/tmp/zfsw-collect/c3      -      -      0      2    133   286K
+dedup                             -      -      -      -      -      -
+  /var/tmp/zfsw-collect/c8        0   960M      0      0    133  8.05K
+special                           -      -      -      -      -      -
+  /var/tmp/zfsw-collect/c7     342K   960M      0      1    133  11.6K
+logs                              -      -      -      -      -      -
+  /var/tmp/zfsw-collect/c4       4K   960M      0      0    133  7.99K
+cache                             -      -      -      -      -      -
+  /var/tmp/zfsw-collect/c5    69.5M   950M      0      3  2.56K   386K
+----------------------------  -----  -----  -----  -----  -----  -----

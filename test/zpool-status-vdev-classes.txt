@@ -1,0 +1,22 @@
+  pool: zfsw_mix
+ state: ONLINE
+config:
+
+	NAME                          STATE     READ WRITE CKSUM
+	zfsw_mix                      ONLINE       0     0     0
+	  raidz1-0                    ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/c1  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/c2  ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/c3  ONLINE       0     0     0
+	dedup
+	  /var/tmp/zfsw-collect/c8    ONLINE       0     0     0
+	special
+	  /var/tmp/zfsw-collect/c7    ONLINE       0     0     0
+	logs
+	  /var/tmp/zfsw-collect/c4    ONLINE       0     0     0
+	cache
+	  /var/tmp/zfsw-collect/c5    ONLINE       0     0     0
+	spares
+	  /var/tmp/zfsw-collect/c6    AVAIL
+
+errors: No known data errors

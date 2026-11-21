@@ -1,0 +1,19 @@
+  pool: zfsw_mirror
+ state: ONLINE
+status: One or more devices has experienced an unrecoverable error.  An
+	attempt was made to correct the error.  Applications are unaffected.
+action: Determine if the device needs to be replaced, and clear the errors
+	using 'zpool clear' or replace the device with 'zpool replace'.
+   see: https://openzfs.github.io/openzfs-docs/msg/ZFS-8000-9P
+  scan: scrub in progress since Sat Nov 21 20:50:59 2026
+	401M / 401M scanned, 400M / 401M issued at 200M/s
+	7.08M repaired, 99.99% done, 00:00:00 to go
+config:
+
+	NAME                          STATE     READ WRITE CKSUM
+	zfsw_mirror                   ONLINE       0     0     0
+	  mirror-0                    ONLINE       0     0     0
+	    /var/tmp/zfsw-collect/m1  ONLINE       0     0   131  (repairing)
+	    /var/tmp/zfsw-collect/m2  ONLINE       0     0     0
+
+errors: No known data errors

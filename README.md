@@ -162,7 +162,20 @@ Some notes:
 
 - E-mail notifications are disabled by default.
 
-- The embedded web server is disabled by default.
+- The embedded web server is disabled by default. When enabled it listens on
+  `127.0.0.1:8081` (`bind` in the `[www]` section), meant for a reverse proxy
+  on the same host. Use `bind = :8081` to listen on all interfaces. Example
+  for nginx under the path `/zfswatcher/` (not tested with every setup):
+
+  ```
+  location /zfswatcher/ {
+      proxy_pass http://127.0.0.1:8081;
+  }
+  ```
+
+  together with `rootdir = "/zfswatcher"` in the `[www]` section of
+  `zfswatcher.conf`. The proxy passes the login of the built-in HTTP
+  authentication on; put TLS on the proxy.
 
 - If you change the default web interface templates, it is best to copy them
   from `/usr/share/zfswatcher/www` to another location and change the

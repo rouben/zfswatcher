@@ -18,11 +18,17 @@ version 0.5.0 released 2026-11-21
 
  - The Debian package runs the daemon as the unprivileged system user
    "zfswatcher" with a systemd unit (the SysV init script is gone). The
-   unit creates /var/log/zfswatcher, allows port 80 without root and
-   hardens the service. The bundled zfswatcher-ledctl and its udev rule are
-   installed, so enclosure LEDs work without root. If you use ledctl from the
-   ledmon package, add User=root with "systemctl edit zfswatcher".
-   Logrotate now rotates /var/log/zfswatcher/*.log.
+   unit creates /var/log/zfswatcher and hardens the service. The bundled
+   zfswatcher-ledctl and its udev rule are installed, so enclosure LEDs work
+   without root. If you use ledctl from the ledmon package, add User=root
+   with "systemctl edit zfswatcher". Logrotate now rotates
+   /var/log/zfswatcher/*.log.
+
+ - The web interface now listens on 127.0.0.1:8081 by default instead of
+   all interfaces on port 80, for use behind a reverse proxy. Change "bind"
+   in the [www] section to listen elsewhere, for example ":8081" for all
+   interfaces. Ports below 1024 need CAP_NET_BIND_SERVICE for the service
+   user (see the comment in the systemd unit).
 
  - The Linux binary is static and built without cgo. It no longer crashes
    with "Illegal instruction" on virtual CPUs without AVX.

@@ -21,3 +21,7 @@ export GOFLAGS += -modcacherw
 override_dh_clean:
 	-chmod -R u+w debian/.debhelper
 	dh_clean
+
+# Go binaries carry compressed DWARF sections, which dwz cannot process
+# ("Found compressed .debug_abbrev section"). Skip dwz, as Go packages do.
+override_dh_dwz:

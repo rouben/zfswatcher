@@ -116,3 +116,20 @@ func TestParseZpoolStatusDataErrors(t *testing.T) {
 		t.Errorf("unexpected errors: %q", p.errors)
 	}
 }
+
+func TestParseZpoolStatusPermanentErrorsList(t *testing.T) {
+	pools, err := parseZpoolStatus(readFixture(t, "zpool-status-permanent-errors-v.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pools) != 1 {
+		t.Fatalf("got %d pools, want 1", len(pools))
+	}
+	want := "Permanent errors have been detected in the following files:\n/zfsw_perm/testdata"
+	if pools[0].errors != want {
+		t.Errorf("errors = %q, want %q", pools[0].errors, want)
+	}
+	if got := pools[0].devs[1].cksum; got != 504 {
+		t.Errorf("cksum = %d, want 504", got)
+	}
+}

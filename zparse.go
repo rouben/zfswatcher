@@ -200,6 +200,7 @@ const (
 	stEXTRA
 	stCONFIG
 	stERRORS
+	stERRFILES
 )
 
 // isExtraSectionStart reports whether the line starts one of the optional
@@ -301,7 +302,13 @@ func parseZpoolStatus(zpoolStatusOutput string) (pools []*PoolType, err error) {
 		case s == stCONFIG && len(line) >= 8 && line[:8] == "errors: ":
 			curpool.errors = line[8:]
 			s = stERRORS
-		case s == stERRORS && line == "":
+		case s == stERRORS && line == "" &&
+			strings.HasPrefix(curpool.errors, "Permanent errors"):
+			// "zpool status -v" lists the damaged files after a blank line
+			s = stERRFILES
+		case s == stERRFILES && len(line) >= 1 && line[:1] == " ":
+			curpool.errors += "\n" + strings.TrimSpace(line)
+		case (s == stERRORS || s == stERRFILES) && line == "":
 			// this is the end of a pool!
 			curpool.devs, err = parseConfstr(confstr)
 			if err != nil {

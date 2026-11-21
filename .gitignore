@@ -1,1 +1,23 @@
-zfswatcher
+# Build output (anchored so golibs/.../zfswatcher is not ignored)
+/zfswatcher
+
+# Release artifacts produced by `make dist`, `make deb` and `make rpm`
+/zfswatcher-*.tar.gz
+/zfswatcher-*.rpm
+/zfswatcher_*.deb
+/zfswatcher_*.changes
+/zfswatcher_*.buildinfo
+
+# Debian packaging build leftovers
+/debian/files
+/debian/*.debhelper.log
+/debian/*.substvars
+/debian/.debhelper/
+/debian/zfswatcher/
+
+# IDE and editor files
+/.idea/
+/.vscode/
+*.swp
+*~
+.DS_Store

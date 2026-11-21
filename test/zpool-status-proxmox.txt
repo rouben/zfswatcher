@@ -1,0 +1,46 @@
+  pool: datis
+ state: ONLINE
+status: Some supported and requested features are not enabled on the pool.
+	The pool can still be used, but some features are unavailable.
+action: Enable all features using 'zpool upgrade'. Once this is done,
+	the pool may no longer be accessible by software that does not support
+	the features. See zpool-features(7) for details.
+  scan: scrub repaired 0B in 09:27:59 with 0 errors on Sun Nov  8 09:52:00 2026
+config:
+
+	NAME                                      STATE     READ WRITE CKSUM
+	datis                                     ONLINE       0     0     0
+	  raidz1-0                                ONLINE       0     0     0
+	    ata-WDC_WD80EMZZ-11B4FB0_WD-CA0AAAAA  ONLINE       0     0     0
+	    ata-WDC_WD80EMZZ-11B4FB0_WD-CA0BBBBB  ONLINE       0     0     0
+	    ata-WDC_WD80EMZZ-11B4FB0_WD-CA0CCCCC  ONLINE       0     0     0
+
+errors: No known data errors
+
+  pool: rpool
+ state: ONLINE
+  scan: scrub repaired 0B in 00:04:19 with 0 errors on Sun Nov  8 00:28:22 2026
+config:
+
+	NAME                                               STATE     READ WRITE CKSUM
+	rpool                                              ONLINE       0     0     0
+	  mirror-0                                         ONLINE       0     0     0
+	    ata-SanDisk_SSD_PLUS_120GB_201911A0000A-part3  ONLINE       0     0     0
+	    sdi3                                           ONLINE       0     0     0
+
+errors: No known data errors
+
+  pool: secundus
+ state: ONLINE
+  scan: scrub repaired 0B in 00:05:45 with 0 errors on Sun Nov  8 00:29:49 2026
+config:
+
+	NAME         STATE     READ WRITE CKSUM
+	secundus     ONLINE       0     0     0
+	  raidz1-0   ONLINE       0     0     0
+	    WD4TB01  ONLINE       0     0     0
+	    WD4TB02  ONLINE       0     0     0
+	    IW4TB01  ONLINE       0     0     0
+	    IW4TB02  ONLINE       0     0     0
+
+errors: No known data errors

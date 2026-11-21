@@ -19,6 +19,7 @@
 // along with zfswatcher. If not, see <http://www.gnu.org/licenses/>.
 //
 
+//go:build solaris
 // +build solaris
 
 package main

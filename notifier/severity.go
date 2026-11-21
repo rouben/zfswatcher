@@ -44,15 +44,15 @@ const (
 )
 
 var severityStrings = []string{
-	EMERG:   "emerg",
-	ALERT:   "alert",
-	CRIT:    "crit",
-	ERR:     "err",
-	WARNING: "warning",
-	NOTICE:  "notice",
-	INFO:    "info",
-	DEBUG:   "debug",
-	SEVERITY_NONE:    "none",
+	EMERG:         "emerg",
+	ALERT:         "alert",
+	CRIT:          "crit",
+	ERR:           "err",
+	WARNING:       "warning",
+	NOTICE:        "notice",
+	INFO:          "info",
+	DEBUG:         "debug",
+	SEVERITY_NONE: "none",
 }
 
 var severityCodes = map[string]Severity{

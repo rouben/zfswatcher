@@ -25,9 +25,9 @@ import (
 	"errors"
 	"github.com/snabb/smtp"
 	"net"
+	"os"
 	"strings"
 	"time"
-	"os"
 )
 
 func (n *Notifier) sendEmailSMTP(server, username, password, from, to, subject, text string) {

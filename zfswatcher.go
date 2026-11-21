@@ -20,11 +20,11 @@
 //
 
 /*
-  zfswatcher - ZFS pool monitoring and notification daemon
+zfswatcher - ZFS pool monitoring and notification daemon
 
-  Please see the web site for more information:
+Please see the web site for more information:
 
-  http://zfswatcher.damicon.fi/
+http://zfswatcher.damicon.fi/
 */
 package main
 
@@ -97,7 +97,7 @@ func checkZpoolStatus(os, ns []*PoolType) {
 	for name := range ns_pools {
 		// check for new pools:
 		if os_pools[name] == nil {
-			notify.Printf(cfg.Severity.Pooladded, `[host: %s] pool "%s" added`, hostname , name)
+			notify.Printf(cfg.Severity.Pooladded, `[host: %s] pool "%s" added`, hostname, name)
 			trackNotifications(notificationSev, name, cfg.Severity.Pooladded)
 			continue
 		}

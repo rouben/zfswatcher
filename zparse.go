@@ -31,17 +31,17 @@ import (
 
 // ZFS pool disk usage.
 type PoolUsageType struct {
-	Name           string
-	Avail          int64
-	Used           int64
-	Usedsnap       int64
-	Usedds         int64
-	Usedrefreserv  int64
-	Usedchild      int64
-	Refer          int64
-	Mountpoint     string
-	Logicalused    int64
-	Compressratio  string
+	Name          string
+	Avail         int64
+	Used          int64
+	Usedsnap      int64
+	Usedds        int64
+	Usedrefreserv int64
+	Usedchild     int64
+	Refer         int64
+	Mountpoint    string
+	Logicalused   int64
+	Compressratio string
 }
 
 // Methods for calculating the percentage to make sure that the calculation
@@ -69,17 +69,17 @@ func parseZfsList(str string) map[string]*PoolUsageType {
 			continue
 		}
 		usagemap[f[0]] = &PoolUsageType{
-			Name:           f[0],
-			Avail:          unniceNumber(f[1]),
-			Used:           unniceNumber(f[2]),
-			Logicalused:    unniceNumber(f[3]),
-			Usedsnap:       unniceNumber(f[4]),
-			Usedds:         unniceNumber(f[5]),
-			Usedrefreserv:  unniceNumber(f[6]),
-			Usedchild:      unniceNumber(f[7]),
-			Refer:          unniceNumber(f[8]),
-			Mountpoint:     f[9],
-			Compressratio:  f[10],
+			Name:          f[0],
+			Avail:         unniceNumber(f[1]),
+			Used:          unniceNumber(f[2]),
+			Logicalused:   unniceNumber(f[3]),
+			Usedsnap:      unniceNumber(f[4]),
+			Usedds:        unniceNumber(f[5]),
+			Usedrefreserv: unniceNumber(f[6]),
+			Usedchild:     unniceNumber(f[7]),
+			Refer:         unniceNumber(f[8]),
+			Mountpoint:    f[9],
+			Compressratio: f[10],
 		}
 	}
 	return usagemap

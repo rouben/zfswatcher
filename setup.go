@@ -48,12 +48,14 @@ var cfg *cfgType
 type cfgType struct {
 	Main struct {
 		Zpoolstatusrefresh int
+		Commandtimeout     int
 		Zpoolstatuscmd     string
 		Zfslistrefresh     int
 		Zfslistcmd         string
 		Zfslistusagecmd    string
 		Zpooliostatcmd     string
 		Pidfile            string
+		Statefile          string
 	}
 	Severity struct {
 		Poolstatemap             stateToSeverityMap
@@ -109,6 +111,7 @@ type cfgType struct {
 		Templatedir          string
 		Resourcedir          string
 		Rootdir              string
+		Trustedproxies       string
 		Severitycssclassmap  severityToWwwClassMap
 		Poolstatecssclassmap stringToStringMap
 		Devstatecssclassmap  stringToStringMap
@@ -256,6 +259,21 @@ const (
 	maxRefreshSeconds = 24 * 60 * 60
 )
 
+// Allowed range of the command timeout in seconds.
+const (
+	minCommandTimeoutSeconds = 1
+	maxCommandTimeoutSeconds = 3600
+)
+
+// checkCommandTimeout validates a command timeout given in seconds.
+func checkCommandTimeout(sec int) error {
+	if sec < minCommandTimeoutSeconds || sec > maxCommandTimeoutSeconds {
+		return fmt.Errorf("value %d out of range, must be between %d and %d seconds",
+			sec, minCommandTimeoutSeconds, maxCommandTimeoutSeconds)
+	}
+	return nil
+}
+
 // checkRefresh validates a refresh interval given in seconds.
 func checkRefresh(sec int) error {
 	if sec < minRefreshSeconds || sec > maxRefreshSeconds {
@@ -271,10 +289,12 @@ func getCfg() *cfgType {
 
 	// set up some sane default configuration settings:
 	c.Main.Zpoolstatusrefresh = 10
+	c.Main.Commandtimeout = int(commandTimeout / time.Second)
 	c.Main.Zpoolstatuscmd = "zpool status"
 	c.Main.Zfslistrefresh = 60
 	c.Main.Zfslistcmd = "zfs list -H -o name,avail,used,logicalused,usedsnap,usedds,usedrefreserv,usedchild,refer,mountpoint,compressratio -d 0"
 	c.Main.Zfslistusagecmd = "zfs list -H -o name,avail,used,logicalused,usedsnap,usedds,usedrefreserv,usedchild,refer,mountpoint,compressratio -r -t all"
+	c.Main.Statefile = defaultStatefile
 	c.Leds.Ledctlcmd = "ledctl"
 	// Without this the web server would listen on port 80.
 	c.Www.Bind = defaultWwwBind
@@ -296,6 +316,9 @@ func getCfg() *cfgType {
 	checkCfgErr(cfgFile, "", "", "", err, &errorSeen)
 	checkCfgErr(cfgFile, "main", "", "zpoolstatusrefresh", checkRefresh(c.Main.Zpoolstatusrefresh), &errorSeen)
 	checkCfgErr(cfgFile, "main", "", "zfslistrefresh", checkRefresh(c.Main.Zfslistrefresh), &errorSeen)
+	_, err = parseTrustedProxies(c.Www.Trustedproxies)
+	checkCfgErr(cfgFile, "www", "", "trustedproxies", err, &errorSeen)
+	checkCfgErr(cfgFile, "main", "", "commandtimeout", checkCommandTimeout(c.Main.Commandtimeout), &errorSeen)
 
 	if errorSeen {
 		return nil
@@ -377,6 +400,8 @@ func setup() {
 	if cfg == nil {
 		os.Exit(2)
 	}
+	// Applied at startup only: running goroutines read the value.
+	commandTimeout = time.Duration(cfg.Main.Commandtimeout) * time.Second
 	notify = setupLog(cfg)
 
 	if *optTest {
@@ -390,11 +415,25 @@ func setup() {
 }
 
 // Reconfigure event (usually SIGHUP).
+// persisterPath returns the state file used since startup ("" if disabled).
+func persisterPath() string {
+	if persister == nil {
+		return ""
+	}
+	return persister.path
+}
+
 func reconfigure() {
 	newcfg := getCfg()
 	if newcfg == nil {
 		notify.Print(notifier.CRIT, "invalid configuration ", cfgFile, ", keeping old configuration")
 		return
+	}
+	if persisterPath() != newcfg.Main.Statefile {
+		notify.Print(notifier.WARNING, "statefile change needs a restart (still using \"", persisterPath(), "\")")
+	}
+	if time.Duration(newcfg.Main.Commandtimeout)*time.Second != commandTimeout {
+		notify.Print(notifier.WARNING, "commandtimeout change needs a restart")
 	}
 	cfg = newcfg
 	newNotify := setupLog(cfg)

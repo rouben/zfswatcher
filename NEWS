@@ -5,13 +5,53 @@
 
 version 0.7.0 (unreleased)
 
+Upgrade notes
+
+ - zfswatcher now saves the pool state to "statefile" (default
+   /var/lib/zfswatcher/state.json, set "statefile =" to disable) and
+   reports after a restart only the changes since the last run instead of
+   treating every pool and device as new. The bundled systemd unit creates
+   the directory (StateDirectory=); with a custom unit or init script
+   the directory must be writable for the service user. The state file is
+   written atomically with mode 0640. Add the "statefile" line to your
+   configuration if you want to change the location.
+
+New features
+
+ - State persistence: zfswatcher remembers the pool state across restarts
+   (see upgrade notes) and reports only the changes since the last run.
+ - The web interface has a health check at "<rootdir>/healthz" for monitoring
+   tools such as Uptime Kuma. It needs no login and reveals nothing about
+   pools: 200 "ok" if the last "zpool status" query worked and is not older
+   than three times "zpoolstatusrefresh", otherwise 503 with "starting",
+   "stale" or "error".
+ - New option "commandtimeout" in section [main]: the time in seconds
+   (1 to 3600, default 60) after which a hanging zpool/zfs command is
+   killed. It is read at startup only.
+ - New option "trustedproxies" in the [www] section: IP addresses or
+   networks of reverse proxies whose X-Forwarded-For and
+   X-Forwarded-Proto headers are trusted. The default (empty) ignores the
+   headers. Failed web logins are now logged as warnings with the client
+   address. The README has nginx and Caddy examples; the proxy must pass
+   the original Host header on ("$http_host" in nginx, CSRF protection).
+
 Fixes
 
+ - The web server now shuts down gracefully on SIGTERM/SIGINT: running
+   requests get up to 5 seconds to finish and no new ones are accepted.
  - A pool whose configuration cannot be determined is now shown without
    devices instead of with a bogus device named "The".
  - The iostat stream reader no longer loses entries that arrive together
    in a single read.
  - A failed or malformed iostat read no longer crashes the daemon.
+
+Cleanup
+
+ - Removed etc/gccgo-build.sh, which built from the bundled golibs/ tree.
+ - The project homepage and the RPM spec now point to the maintained fork
+   at github.com/tantefred/zfswatcher. The about page names the fork.
+ - The RPM spec documents the Go 1.26 requirement but does not check it as a
+   build dependency, so the package builds with a Go toolchain from elsewhere.
 
 
 version 0.6.0 released 2026-11-22

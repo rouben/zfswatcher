@@ -22,8 +22,13 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"html/template"
+	"net"
 	"net/http"
+	"net/netip"
 	"sort"
 	"strings"
 	"sync/atomic"
@@ -44,7 +49,12 @@ func noDirListing(h http.Handler) http.HandlerFunc {
 	})
 }
 
-func webServer() {
+// webShutdownTimeout is how long running requests get to finish on shutdown.
+const webShutdownTimeout = 5 * time.Second
+
+// webServer sets up and starts the web server in the background. The returned
+// server can be passed to shutdownWebServer.
+func webServer() *http.Server {
 	var err error
 
 	templates = template.New("zfswatcher").Funcs(template.FuncMap{
@@ -68,14 +78,51 @@ func webServer() {
 		IdleTimeout:       120 * time.Second,
 		MaxHeaderBytes:    64 << 10,
 	}
+	go func() {
+		if err := serveWeb(srv, nil, tlsEnabled); err != nil {
+			notify.Printf(notifier.ERR, "web server failed: %s", err)
+		}
+	}()
+	return srv
+}
+
+// serveWeb runs srv on ln until it fails or is shut down. A nil ln means
+// listening on srv.Addr. A regular shutdown (http.ErrServerClosed) is not an
+// error.
+func serveWeb(srv *http.Server, ln net.Listener, tlsEnabled bool) error {
+	if ln == nil {
+		addr := srv.Addr
+		if addr == "" {
+			addr = ":http"
+		}
+		var err error
+		if ln, err = net.Listen("tcp", addr); err != nil {
+			return err
+		}
+	}
+	var err error
 	if tlsEnabled {
-		err = srv.ListenAndServeTLS(cfg.Www.Certfile, cfg.Www.Keyfile)
+		err = srv.ServeTLS(ln, cfg.Www.Certfile, cfg.Www.Keyfile)
 	} else {
-		err = srv.ListenAndServe()
+		err = srv.Serve(ln)
 	}
-	if err != nil {
-		notify.Printf(notifier.ERR, "error starting web server: %s", err)
+	if errors.Is(err, http.ErrServerClosed) {
+		return nil
 	}
+	return err
+}
+
+// shutdownWebServer stops accepting new connections and waits up to timeout
+// for running requests to finish.
+func shutdownWebServer(srv *http.Server, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		// timeout: forcibly close connections that are still open
+		_ = srv.Close()
+		return err
+	}
+	return nil
 }
 
 // newWebHandler builds the complete handler tree of the web interface.
@@ -88,6 +135,9 @@ func newWebHandler(tlsEnabled bool) http.Handler {
 				http.FileServer(
 					http.Dir(cfg.Www.Resourcedir)))))
 
+	// Health check for monitoring tools: deliberately without authentication.
+	mux.HandleFunc(cfg.Www.Rootdir+"/healthz", healthzHandler)
+
 	mux.HandleFunc(cfg.Www.Rootdir+"/", basicAuth(dashboardHandler))
 	mux.HandleFunc(cfg.Www.Rootdir+"/status/", basicAuth(statusHandler))
 	mux.HandleFunc(cfg.Www.Rootdir+"/usage/", basicAuth(usageHandler))
@@ -98,7 +148,169 @@ func newWebHandler(tlsEnabled bool) http.Handler {
 	mux.HandleFunc(cfg.Www.Rootdir+"/enclosure/", basicAuth(enclosureHandler))
 
 	// Reject cross-origin state changing requests (CSRF) for all paths.
-	return securityHeaders(http.NewCrossOriginProtection().Handler(mux), tlsEnabled)
+	// The proxy handling runs first so that everything below sees the
+	// client address and scheme. It does not touch Host, which the CSRF
+	// check compares with the Origin header (see README).
+	proxies, _ := parseTrustedProxies(cfg.Www.Trustedproxies) // validated in getCfg
+	return proxyHeaders(proxies, securityHeaders(http.NewCrossOriginProtection().Handler(mux), tlsEnabled))
+}
+
+// parseTrustedProxies parses a space separated list of IP addresses and
+// CIDR networks. An empty list means that no proxy is trusted.
+func parseTrustedProxies(list string) ([]netip.Prefix, error) {
+	var res []netip.Prefix
+	for _, f := range strings.Fields(list) {
+		if p, err := netip.ParsePrefix(f); err == nil {
+			if p.Addr().Zone() != "" {
+				return nil, fmt.Errorf("invalid IP address or network %q", f)
+			}
+			q := netip.PrefixFrom(p.Addr().Unmap(), unmapBits(p))
+			if !q.IsValid() {
+				return nil, fmt.Errorf("invalid IP address or network %q", f)
+			}
+			res = append(res, q.Masked())
+			continue
+		}
+		a, err := netip.ParseAddr(f)
+		if err != nil || a.Zone() != "" {
+			return nil, fmt.Errorf("invalid IP address or network %q", f)
+		}
+		a = a.Unmap()
+		res = append(res, netip.PrefixFrom(a, a.BitLen()))
+	}
+	return res, nil
+}
+
+// unmapBits returns the prefix length for p after its address was converted
+// from an IPv4-mapped IPv6 address to IPv4.
+func unmapBits(p netip.Prefix) int {
+	if p.Addr().Is4In6() && p.Bits() >= 96 {
+		return p.Bits() - 96
+	}
+	return p.Bits()
+}
+
+func isTrusted(proxies []netip.Prefix, a netip.Addr) bool {
+	for _, p := range proxies {
+		if p.Contains(a) {
+			return true
+		}
+	}
+	return false
+}
+
+type clientInfoKey struct{}
+
+// clientInfo is the client address and scheme as seen by the web server,
+// taking trusted reverse proxies into account.
+type clientInfo struct {
+	IP     string
+	Scheme string
+}
+
+// clientIP returns the client address of the request: the real peer, or, if
+// that is a trusted proxy, the address forwarded by it.
+func clientIP(r *http.Request) string {
+	if ci, ok := r.Context().Value(clientInfoKey{}).(clientInfo); ok {
+		return ci.IP
+	}
+	return r.RemoteAddr
+}
+
+// clientScheme returns "https" or "http" as used by the client.
+func clientScheme(r *http.Request) string {
+	if ci, ok := r.Context().Value(clientInfoKey{}).(clientInfo); ok {
+		return ci.Scheme
+	}
+	if r.TLS != nil {
+		return "https"
+	}
+	return "http"
+}
+
+// proxyHeaders evaluates X-Forwarded-For and X-Forwarded-Proto,
+// but only if the direct peer is a trusted proxy; otherwise (and always with
+// an empty list) the headers are ignored, because any client can forge them.
+// The result is stored in the request context; r.RemoteAddr stays untouched.
+func proxyHeaders(proxies []netip.Prefix, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ci := clientInfo{IP: r.RemoteAddr, Scheme: "http"}
+		if r.TLS != nil {
+			ci.Scheme = "https"
+		}
+		if ap, err := netip.ParseAddrPort(r.RemoteAddr); err == nil {
+			peer := ap.Addr().Unmap()
+			ci.IP = peer.String()
+			if isTrusted(proxies, peer) {
+				ci.IP = forwardedClient(proxies, peer, r.Header)
+				// the rightmost value was added by the nearest proxy
+				pv := r.Header.Values("X-Forwarded-Proto")
+				if len(pv) > 0 {
+					parts := strings.Split(pv[len(pv)-1], ",")
+					switch v := strings.ToLower(strings.TrimSpace(parts[len(parts)-1])); v {
+					case "http", "https":
+						ci.Scheme = v
+					}
+				}
+			}
+		}
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), clientInfoKey{}, ci)))
+	})
+}
+
+// forwardedClient walks X-Forwarded-For from right to left and returns the
+// first address which is not a trusted proxy. Unparsable entries end the
+// walk, the last good hop wins.
+func forwardedClient(proxies []netip.Prefix, peer netip.Addr, h http.Header) string {
+	var hops []string
+	for _, v := range h.Values("X-Forwarded-For") {
+		hops = append(hops, strings.Split(v, ",")...)
+	}
+	if len(hops) == 0 {
+		return peer.String()
+	}
+	client := peer
+	for i := len(hops) - 1; i >= 0; i-- {
+		a, err := netip.ParseAddr(strings.TrimSpace(hops[i]))
+		if err != nil {
+			break
+		}
+		client = a.Unmap().WithZone("")
+		if !isTrusted(proxies, client) {
+			break
+		}
+	}
+	return client.String()
+}
+
+// healthzHandler reports the health of the daemon only (no pool states, no
+// error details): 200 when the last zpool status query succeeded and is not
+// older than three refresh intervals, otherwise 503.
+func healthzHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		w.Header().Set("Allow", "GET, HEAD")
+		http.Error(w, "405 Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	zpoolHealth.mutex.Lock()
+	seen, ok, at := zpoolHealth.seen, zpoolHealth.ok, zpoolHealth.at
+	zpoolHealth.mutex.Unlock()
+
+	code, text := http.StatusOK, "ok"
+	switch {
+	case !seen:
+		code, text = http.StatusServiceUnavailable, "starting"
+	case !ok:
+		code, text = http.StatusServiceUnavailable, "error"
+	case time.Since(at) > 3*time.Duration(cfg.Main.Zpoolstatusrefresh)*time.Second:
+		code, text = http.StatusServiceUnavailable, "stale"
+	}
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(code)
+	if r.Method == http.MethodGet {
+		_, _ = w.Write([]byte(text + "\n"))
+	}
 }
 
 // webCSP restricts the pages to their own origin. Inline styles are still
@@ -114,7 +326,7 @@ func securityHeaders(h http.Handler, tlsEnabled bool) http.Handler {
 		hdr.Set("X-Frame-Options", "DENY")
 		hdr.Set("Referrer-Policy", "same-origin")
 		hdr.Set("Content-Security-Policy", webCSP)
-		if tlsEnabled {
+		if tlsEnabled || clientScheme(r) == "https" {
 			hdr.Set("Strict-Transport-Security", "max-age=31536000")
 		}
 		h.ServeHTTP(w, r)

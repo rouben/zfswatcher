@@ -23,6 +23,8 @@ User=zfswatcher
 Group=zfswatcher
 # Creates /var/log/zfswatcher owned by the service user.
 LogsDirectory=zfswatcher
+# Creates /var/lib/zfswatcher for the saved pool state (statefile setting).
+StateDirectory=zfswatcher
 Restart=on-failure
 RestartSec=5
 

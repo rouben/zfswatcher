@@ -79,13 +79,22 @@ func authenticate(username, password string) bool {
 	return checkPassword(hash, password)
 }
 
+// truncateRunes shortens s to at most n runes, so that a client cannot flood
+// the log with a huge user name.
+func truncateRunes(s string, n int) string {
+	if r := []rune(s); len(r) > n {
+		return string(r[:n]) + "..."
+	}
+	return s
+}
+
 // basicAuth wraps the handler with HTTP Basic authentication.
 func basicAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username, password, ok := r.BasicAuth()
 		if !ok || !authenticate(username, password) {
 			if ok && notify != nil {
-				notify.Printf(notifier.WARNING, "web login failed for user %q from %s", username, clientIP(r))
+				notify.Printf(notifier.WARNING, "web login failed for user %q from %s", truncateRunes(username, 64), clientIP(r))
 			}
 			w.Header().Set("WWW-Authenticate", `Basic realm="`+authRealm+`", charset="UTF-8"`)
 			http.Error(w, "401 Unauthorized", http.StatusUnauthorized)

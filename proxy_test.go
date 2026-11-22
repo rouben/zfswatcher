@@ -64,9 +64,9 @@ func TestProxyHeaders(t *testing.T) {
 		{"garbage entry stops the walk", "127.0.0.1", "127.0.0.1:1",
 			map[string]string{"X-Forwarded-For": "1.2.3.4, bogus"},
 			"127.0.0.1", "http"},
-		{"X-Real-IP fallback", "127.0.0.1", "127.0.0.1:1",
+		{"X-Real-IP is ignored", "127.0.0.1", "127.0.0.1:1",
 			map[string]string{"X-Real-IP": "203.0.113.8"},
-			"203.0.113.8", "http"},
+			"127.0.0.1", "http"},
 		{"invalid proto ignored", "127.0.0.1", "127.0.0.1:1",
 			map[string]string{"X-Forwarded-Proto": "javascript"},
 			"127.0.0.1", "http"},
@@ -82,7 +82,7 @@ func TestProxyHeaders(t *testing.T) {
 }
 
 func TestParseTrustedProxiesInvalid(t *testing.T) {
-	for _, s := range []string{"nonsense", "10.0.0.0/33", "127.0.0.1 foo", "fe80::1%eth0", "1.2.3"} {
+	for _, s := range []string{"nonsense", "10.0.0.0/33", "127.0.0.1 foo", "fe80::1%eth0", "1.2.3", "::ffff:0:0/80", "::ffff:10.0.0.0/90"} {
 		if _, err := parseTrustedProxies(s); err == nil {
 			t.Errorf("%q: expected error", s)
 		}
@@ -142,5 +142,16 @@ func TestHSTSFromForwardedProto(t *testing.T) {
 		if got := w.Header().Get("Strict-Transport-Security"); got != want {
 			t.Errorf("%s: HSTS %q, want %q", remote, got, want)
 		}
+	}
+}
+
+func TestTruncateRunes(t *testing.T) {
+	if got := truncateRunes("abc", 64); got != "abc" {
+		t.Errorf("short: %q", got)
+	}
+	long := strings.Repeat("\u00e4", 100)
+	got := truncateRunes(long, 64)
+	if got != strings.Repeat("\u00e4", 64)+"..." {
+		t.Errorf("long: %q", got)
 	}
 }

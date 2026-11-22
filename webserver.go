@@ -117,7 +117,11 @@ func parseTrustedProxies(list string) ([]netip.Prefix, error) {
 			if p.Addr().Zone() != "" {
 				return nil, fmt.Errorf("invalid IP address or network %q", f)
 			}
-			res = append(res, netip.PrefixFrom(p.Addr().Unmap(), unmapBits(p)).Masked())
+			q := netip.PrefixFrom(p.Addr().Unmap(), unmapBits(p))
+			if !q.IsValid() {
+				return nil, fmt.Errorf("invalid IP address or network %q", f)
+			}
+			res = append(res, q.Masked())
 			continue
 		}
 		a, err := netip.ParseAddr(f)
@@ -177,7 +181,7 @@ func clientScheme(r *http.Request) string {
 	return "http"
 }
 
-// proxyHeaders evaluates X-Forwarded-For, X-Real-IP and X-Forwarded-Proto,
+// proxyHeaders evaluates X-Forwarded-For and X-Forwarded-Proto,
 // but only if the direct peer is a trusted proxy; otherwise (and always with
 // an empty list) the headers are ignored, because any client can forge them.
 // The result is stored in the request context; r.RemoteAddr stays untouched.
@@ -208,17 +212,14 @@ func proxyHeaders(proxies []netip.Prefix, next http.Handler) http.Handler {
 }
 
 // forwardedClient walks X-Forwarded-For from right to left and returns the
-// first address which is not a trusted proxy. If the header is missing,
-// X-Real-IP is used. Unparsable entries end the walk, the last good hop wins.
+// first address which is not a trusted proxy. Unparsable entries end the
+// walk, the last good hop wins.
 func forwardedClient(proxies []netip.Prefix, peer netip.Addr, h http.Header) string {
 	var hops []string
 	for _, v := range h.Values("X-Forwarded-For") {
 		hops = append(hops, strings.Split(v, ",")...)
 	}
 	if len(hops) == 0 {
-		if a, err := netip.ParseAddr(strings.TrimSpace(h.Get("X-Real-IP"))); err == nil {
-			return a.Unmap().WithZone("").String()
-		}
 		return peer.String()
 	}
 	client := peer

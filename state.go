@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 
 	"github.com/tantefred/zfswatcher/notifier"
 )
@@ -23,6 +25,10 @@ const (
 
 	// defaultStatefile is used if the configuration does not set "statefile".
 	defaultStatefile = "/var/lib/zfswatcher/state.json"
+
+	// maxStateFileSize bounds what loadStateFile reads; real files are a few
+	// kilobytes.
+	maxStateFileSize = 10 << 20
 )
 
 type stateDev struct {
@@ -130,9 +136,17 @@ func (sf *stateFile) sameAs(other *stateFile) bool {
 // loadStateFile reads a state file. A missing file is reported with an error
 // for which errors.Is(err, fs.ErrNotExist) holds.
 func loadStateFile(path string) (*stateFile, error) {
-	data, err := os.ReadFile(path) //nolint:gosec // path comes from the configuration
+	f, err := os.Open(path) //nolint:gosec // path comes from the configuration
 	if err != nil {
 		return nil, err
+	}
+	defer func() { _ = f.Close() }()
+	data, err := io.ReadAll(io.LimitReader(f, maxStateFileSize+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(data) > maxStateFileSize {
+		return nil, fmt.Errorf("file too large (more than %d bytes)", maxStateFileSize)
 	}
 	var sf stateFile
 	if err := json.Unmarshal(data, &sf); err != nil {
@@ -186,6 +200,22 @@ func writeStateFile(path string, sf *stateFile) (err error) {
 	return nil
 }
 
+// removeStaleTempFiles removes temporary files which a crash during
+// writeStateFile left behind (best effort, errors are ignored).
+func removeStaleTempFiles(path string) {
+	dir := filepath.Dir(path)
+	prefix := "." + filepath.Base(path) + ".tmp"
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	for _, e := range entries {
+		if e.Type().IsRegular() && strings.HasPrefix(e.Name(), prefix) {
+			_ = os.Remove(filepath.Join(dir, e.Name()))
+		}
+	}
+}
+
 // statePersister keeps the state file up to date. A nil *statePersister (no
 // "statefile" configured) does nothing.
 type statePersister struct {
@@ -208,6 +238,7 @@ func (sp *statePersister) loadPrevious() *stateFile {
 	if sp == nil {
 		return nil
 	}
+	removeStaleTempFiles(sp.path)
 	sf, err := loadStateFile(sp.path)
 	switch {
 	case err == nil:
@@ -232,6 +263,8 @@ func (sp *statePersister) update(pools []*PoolType, usage map[string]*PoolUsageT
 	if sp.last != nil && sf.sameAs(sp.last) {
 		return
 	}
+	// best effort; if it fails, writeStateFile reports the real problem
+	_ = os.MkdirAll(filepath.Dir(sp.path), 0o750)
 	if err := writeStateFile(sp.path, sf); err != nil {
 		if !sp.failing {
 			notify.Printf(notifier.ERR, "cannot write state file %s: %s", sp.path, err)

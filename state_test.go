@@ -201,17 +201,22 @@ func TestPersisterWritesOnlyOnChange(t *testing.T) {
 func TestPersisterErrorLoggedOncePerFailure(t *testing.T) {
 	done := captureState(t)
 	dir := t.TempDir()
-	path := filepath.Join(dir, "sub", "state.json")
+	// "sub" is a regular file, so neither MkdirAll nor the write can work
+	sub := filepath.Join(dir, "sub")
+	if err := os.WriteFile(sub, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(sub, "state.json")
 	p := newStatePersister(path)
 	pools := parseFixture(t, "zpool-status-degraded.txt")
 
 	p.update(pools, nil)
 	p.update(pools, nil)
 	p.update(pools, nil)
-	if err := os.Mkdir(filepath.Join(dir, "sub"), 0o750); err != nil {
+	if err := os.Remove(sub); err != nil {
 		t.Fatal(err)
 	}
-	p.update(pools, nil) // recovers
+	p.update(pools, nil) // recovers (creates the directory)
 	msgs := done()
 	if len(msgs) != 2 || !strings.Contains(msgs[0], "cannot write state file") ||
 		!strings.Contains(msgs[1], "writable again") {
@@ -274,5 +279,61 @@ func TestUsageDiffAfterLoad(t *testing.T) {
 	msgs := done()
 	if len(msgs) != 1 || !strings.Contains(msgs[0], "usage reached 80%") {
 		t.Errorf("unexpected messages: %q", msgs)
+	}
+}
+
+func TestStateFileTooLarge(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "big.json")
+	big := make([]byte, maxStateFileSize+1)
+	for i := range big {
+		big[i] = ' '
+	}
+	if err := os.WriteFile(path, big, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := loadStateFile(path); err == nil || !strings.Contains(err.Error(), "too large") {
+		t.Errorf("want too large error, got %v", err)
+	}
+	done := captureState(t)
+	if newStatePersister(path).loadPrevious() != nil {
+		t.Error("oversized file must not yield a state")
+	}
+	msgs := done()
+	if len(msgs) != 1 || !strings.Contains(msgs[0], "ignoring state file") {
+		t.Errorf("unexpected messages: %q", msgs)
+	}
+}
+
+func TestPersisterCreatesDirectory(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "sub", "dir", "state.json")
+	done := captureState(t)
+	sp := newStatePersister(path)
+	sp.update(parseFixture(t, "zpool-status-degraded.txt"), nil)
+	if msgs := done(); len(msgs) != 0 {
+		t.Errorf("unexpected messages: %q", msgs)
+	}
+	if _, err := loadStateFile(path); err != nil {
+		t.Errorf("state file not written: %v", err)
+	}
+}
+
+func TestStaleTempFilesRemoved(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "state.json")
+	stale := filepath.Join(dir, ".state.json.tmp12345")
+	other := filepath.Join(dir, "other.txt")
+	for _, f := range []string{stale, other} {
+		if err := os.WriteFile(f, []byte("x"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	done := captureState(t)
+	newStatePersister(path).loadPrevious()
+	done()
+	if _, err := os.Stat(stale); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("stale temp file still there: %v", err)
+	}
+	if _, err := os.Stat(other); err != nil {
+		t.Errorf("unrelated file removed: %v", err)
 	}
 }

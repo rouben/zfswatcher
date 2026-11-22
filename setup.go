@@ -416,6 +416,9 @@ func reconfigure() {
 		notify.Print(notifier.CRIT, "invalid configuration ", cfgFile, ", keeping old configuration")
 		return
 	}
+	if time.Duration(newcfg.Main.Commandtimeout)*time.Second != commandTimeout {
+		notify.Print(notifier.WARNING, "commandtimeout change needs a restart")
+	}
 	cfg = newcfg
 	newNotify := setupLog(cfg)
 	if newNotify == nil {

@@ -5,7 +5,7 @@ Summary:	ZFS pool monitoring and notification daemon
 
 Group:		Applications/System
 License:	GPLv3+
-Vendor:		Damicon Kraa Oy <http://www.damicon.fi/>
+Vendor:		tantefred
 Packager:	tantefred <147740857+tantefred@users.noreply.github.com>
 URL:		https://github.com/tantefred/zfswatcher
 Source0:	%{name}-%{version}.tar.gz
@@ -22,7 +22,7 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 %define		user %{name}
 %define		group %{name}
 
-#BuildRequires:	# Go 1.0.3
+BuildRequires:	golang >= 1.26
 #BuildRequires:		systemd
 Requires:		zfs
 Requires(pre):		/usr/sbin/useradd, /usr/sbin/groupadd, /usr/bin/getent

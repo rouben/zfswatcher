@@ -3,6 +3,16 @@
                            version history
 
 
+version 0.7.0 (unreleased)
+
+Cleanup
+
+ - Removed etc/gccgo-build.sh, which built from the bundled golibs/ tree.
+ - The project homepage and the RPM spec now point to the maintained fork
+   at github.com/tantefred/zfswatcher. The about page names the fork.
+ - The RPM spec requires golang 1.26 to build.
+
+
 version 0.6.0 released 2026-11-22
 
 Upgrade notes

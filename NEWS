@@ -18,6 +18,15 @@ Fixes
  - The web server now shuts down gracefully on SIGTERM/SIGINT: running
    requests get up to 5 seconds to finish and no new ones are accepted.
 
+Cleanup
+
+ - Removed etc/gccgo-build.sh, which built from the bundled golibs/ tree.
+ - The project homepage and the RPM spec now point to the maintained fork
+   at github.com/tantefred/zfswatcher. The about page names the fork.
+ - The RPM spec documents the Go 1.26 requirement but does not check it as a
+   build dependency, so the package builds with a Go toolchain from elsewhere.
+
+
 version 0.6.0 released 2026-11-22
 
 Upgrade notes

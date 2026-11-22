@@ -22,34 +22,17 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
-	"math/rand"
 	"net/http"
 	"sort"
 	"strings"
 	"sync/atomic"
 	"time"
 
-	auth "github.com/abbot/go-http-auth"
 	"github.com/tantefred/zfswatcher/notifier"
 )
 
 var defaultPasswordInUse atomic.Bool
-
-func getUserSecret(username, realm string) string {
-	if username == "" {
-		return ""
-	}
-	user, ok := cfg.Wwwuser[username]
-	if !ok {
-		return ""
-	}
-	if user.Enable {
-		return user.Password
-	}
-	return ""
-}
 
 func noDirListing(h http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -73,13 +56,12 @@ func webServer() {
 	}
 
 	warnDefaultPassword()
-
-	authenticator := auth.NewBasicAuthenticator("zfswatcher", getUserSecret)
+	warnLegacyHashes()
 
 	tlsEnabled := cfg.Www.Certfile != "" && cfg.Www.Keyfile != ""
 	srv := &http.Server{
 		Addr:              cfg.Www.Bind,
-		Handler:           newWebHandler(authenticator, tlsEnabled),
+		Handler:           newWebHandler(tlsEnabled),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,
@@ -97,7 +79,7 @@ func webServer() {
 }
 
 // newWebHandler builds the complete handler tree of the web interface.
-func newWebHandler(authenticator *auth.BasicAuth, tlsEnabled bool) http.Handler {
+func newWebHandler(tlsEnabled bool) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.Handle(cfg.Www.Rootdir+"/resources/",
@@ -106,14 +88,14 @@ func newWebHandler(authenticator *auth.BasicAuth, tlsEnabled bool) http.Handler 
 				http.FileServer(
 					http.Dir(cfg.Www.Resourcedir)))))
 
-	mux.HandleFunc(cfg.Www.Rootdir+"/", authenticator.Wrap(dashboardHandler))
-	mux.HandleFunc(cfg.Www.Rootdir+"/status/", authenticator.Wrap(statusHandler))
-	mux.HandleFunc(cfg.Www.Rootdir+"/usage/", authenticator.Wrap(usageHandler))
-	mux.HandleFunc(cfg.Www.Rootdir+"/statistics/", authenticator.Wrap(statisticsHandler))
-	mux.HandleFunc(cfg.Www.Rootdir+"/logs/", authenticator.Wrap(logsHandler))
-	mux.HandleFunc(cfg.Www.Rootdir+"/about/", authenticator.Wrap(aboutHandler))
-	mux.HandleFunc(cfg.Www.Rootdir+"/locate/", authenticator.Wrap(locateHandler))
-	mux.HandleFunc(cfg.Www.Rootdir+"/enclosure/", authenticator.Wrap(enclosureHandler))
+	mux.HandleFunc(cfg.Www.Rootdir+"/", basicAuth(dashboardHandler))
+	mux.HandleFunc(cfg.Www.Rootdir+"/status/", basicAuth(statusHandler))
+	mux.HandleFunc(cfg.Www.Rootdir+"/usage/", basicAuth(usageHandler))
+	mux.HandleFunc(cfg.Www.Rootdir+"/statistics/", basicAuth(statisticsHandler))
+	mux.HandleFunc(cfg.Www.Rootdir+"/logs/", basicAuth(logsHandler))
+	mux.HandleFunc(cfg.Www.Rootdir+"/about/", basicAuth(aboutHandler))
+	mux.HandleFunc(cfg.Www.Rootdir+"/locate/", basicAuth(locateHandler))
+	mux.HandleFunc(cfg.Www.Rootdir+"/enclosure/", basicAuth(enclosureHandler))
 
 	// Reject cross-origin state changing requests (CSRF) for all paths.
 	return securityHeaders(http.NewCrossOriginProtection().Handler(mux), tlsEnabled)
@@ -139,19 +121,10 @@ func securityHeaders(h http.Handler, tlsEnabled bool) http.Handler {
 	})
 }
 
-// isDefaultPassword reports whether the MD5 crypt hash is the one of the
-// well known example password.
+// isDefaultPassword reports whether the hash (bcrypt or MD5 crypt) is the one
+// of the well known example password.
 func isDefaultPassword(hash string) bool {
-	return checkMD5CryptHash(hash, "toor")
-}
-
-func checkMD5CryptHash(hash, password string) bool {
-	parts := strings.Split(hash, "$")
-	if len(parts) != 4 || parts[0] != "" || parts[1] != "1" {
-		return false
-	}
-	got := auth.MD5Crypt([]byte(password), []byte(parts[2]), []byte("$1$"))
-	return string(got) == hash
+	return checkPassword(hash, "toor")
 }
 
 // enabledDefaultPasswordUsers returns the enabled web users which still use
@@ -178,23 +151,20 @@ func warnDefaultPassword() {
 	}
 }
 
-func wwwHashPassword() {
-	fmt.Printf("Password (will echo): ")
-	var password string
-	_, err := fmt.Scanln(&password)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
+// warnLegacyHashes logs a warning for every enabled web user whose password
+// is still stored as (deprecated) MD5 crypt hash.
+func warnLegacyHashes() {
+	var names []string
+	for name, u := range cfg.Wwwuser {
+		if u.Enable && isMD5CryptHash(u.Password) {
+			names = append(names, name)
+		}
 	}
-
-	base64alpha := "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-	var salt []byte
-	for i := 0; i < 8; i++ {
-		salt = append(salt, base64alpha[rand.Intn(len(base64alpha))])
+	sort.Strings(names)
+	for _, name := range names {
+		notify.Printf(notifier.WARNING,
+			"web user %q: MD5 hash is deprecated, create a new one with zfswatcher -P", name)
 	}
-
-	hash := auth.MD5Crypt([]byte(password), salt, []byte("$1$"))
-	fmt.Println("Hash:", string(hash))
 }
 
 // eof

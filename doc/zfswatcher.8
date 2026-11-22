@@ -47,8 +47,14 @@ instead of the default
 Enable debug mode which outputs all messages to STDOUT.
 .TP
 .BR \-P ", " \-\-passwordhash
-Read a password and print a hashed password. This can be useful when
-setting up the configuration files.
+Read a password and print its bcrypt hash (cost 10) for the
+.B password
+setting of a
+.B wwwuser
+section in the configuration file. On a terminal the password is read
+without echo and asked for twice; otherwise one line is read from standard
+input, so the option can be used in scripts. Hashes in the older MD5 crypt
+format ("$1$...") are still accepted in the configuration but are deprecated.
 .TP
 .BR \-t ", " \-\-test
 Test the configuration file syntax and exit.

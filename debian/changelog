@@ -18,6 +18,10 @@ zfswatcher (0.6.0-1) UNRELEASED; urgency=medium
     log a deprecation warning at startup. Replace the unmaintained
     github.com/abbot/go-http-auth with a built-in Basic authentication.
   * Add a man page for zfswatcher-ledctl.
+  * Report errors instead of ignoring them: a pid file which cannot be
+    written is logged as an error, failing locate requests are logged.
+  * Create new log files with mode 0640 instead of 0666.
+  * Reject refresh intervals outside 1 to 86400 seconds.
   * Remove the dead html5shim script (loaded over http) from the page header.
   * Drop the recursive chown of /var/log/zfswatcher from postinst; systemd
     LogsDirectory= sets the ownership when the service starts.

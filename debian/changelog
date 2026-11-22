@@ -1,3 +1,14 @@
+zfswatcher (0.6.0-1) UNRELEASED; urgency=medium
+
+  * Harden the web interface: server timeouts and header size limit,
+    security headers (CSP, X-Frame-Options, nosniff, Referrer-Policy, HSTS
+    with TLS), locate only via POST with CSRF check, device validation and
+    internal redirects only.
+  * Warn at startup and on the web pages if a web user still has the
+    example password "toor".
+
+ -- tantefred <147740857+tantefred@users.noreply.github.com>  Sun, 22 Nov 2026 12:00:00 +0100
+
 zfswatcher (0.5.0-1) unstable; urgency=medium
 
   * New version 0.5.0, first release of the tantefred fork.

@@ -75,6 +75,9 @@ func recordZpoolQuery(ok bool, at time.Time) {
 
 var startTime time.Time
 
+// persister is nil if no state file is configured.
+var persister *statePersister
+
 var hostname string
 
 // Keep track of highest (numerically lowest) severity level per pool.
@@ -350,7 +353,15 @@ func main() {
 
 	// alert about big problems here if desired XXX
 	// make device map XXX
-	// load previous state from disk? XXX
+
+	// compare with the state saved by the previous run, so that changes
+	// during the downtime are reported (and nothing else):
+	persister = newStatePersister(cfg.Main.Statefile)
+	if prev := persister.loadPrevious(); prev != nil {
+		checkZpoolStatus(prev.poolTypes(), currentState.state)
+		checkZfsUsage(prev.usageTypes(), currentState.usage)
+	}
+	persister.update(currentState.state, currentState.usage)
 
 	// set initial led states
 	if cfg.Leds.Enable {
@@ -407,6 +418,7 @@ MAINLOOP:
 			currentState.mutex.Lock()
 			currentState.state = newstate
 			currentState.mutex.Unlock()
+			persister.update(currentState.state, currentState.usage)
 		// get disk usage statistics:
 		case <-zfslistTicker.C:
 			zfsListOutput, err := getCommandOutput(cfg.Main.Zfslistcmd)
@@ -423,6 +435,7 @@ MAINLOOP:
 			currentState.mutex.Lock()
 			currentState.usage = newusage
 			currentState.mutex.Unlock()
+			persister.update(currentState.state, currentState.usage)
 		// signals:
 		case <-sigCexit:
 			break MAINLOOP

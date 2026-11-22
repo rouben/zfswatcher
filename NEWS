@@ -5,8 +5,21 @@
 
 version 0.7.0 (unreleased)
 
+Upgrade notes
+
+ - zfswatcher now saves the pool state to "statefile" (default
+   /var/lib/zfswatcher/state.json, set "statefile =" to disable) and
+   reports after a restart only the changes since the last run instead of
+   treating every pool and device as new. The bundled systemd unit creates
+   the directory (StateDirectory=); with a custom unit or init script
+   the directory must be writable for the service user. The state file is
+   written atomically with mode 0640. Add the "statefile" line to your
+   configuration if you want to change the location.
+
 New features
 
+ - State persistence: zfswatcher remembers the pool state across restarts
+   (see upgrade notes) and reports only the changes since the last run.
  - The web interface has a health check at "<rootdir>/healthz" for monitoring
    tools such as Uptime Kuma. It needs no login and reveals nothing about
    pools: 200 "ok" if the last "zpool status" query worked and is not older

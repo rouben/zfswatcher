@@ -157,6 +157,13 @@ Some notes:
   Group=root
   ```
 
+- The pool state is saved to `/var/lib/zfswatcher/state.json` (`statefile` in
+  the `[main]` section, empty disables it). After a restart zfswatcher
+  compares against this file and reports only changes since the last run, for
+  example a pool which became DEGRADED while the daemon was down. A missing,
+  unreadable or incompatible file is logged and everything is reported as new,
+  as before. Write errors are logged once and do not stop the daemon.
+
 - Logging to file `/var/log/zfswatcher/zfswatcher.log` and local syslog
   daemon is enabled by default.
 

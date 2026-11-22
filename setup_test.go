@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"testing"
+	"time"
 )
 
 func unprivilegedPort(t *testing.T, addr string) {
@@ -65,6 +66,9 @@ func cfgWithMain(t *testing.T, body string) *cfgType {
 }
 
 func TestGetCfgCommandTimeout(t *testing.T) {
+	old := commandTimeout
+	commandTimeout = 60 * time.Second
+	t.Cleanup(func() { commandTimeout = old })
 	if c := cfgWithMain(t, ""); c == nil || c.Main.Commandtimeout != 60 {
 		t.Errorf("default: got %+v, want 60", c)
 	}

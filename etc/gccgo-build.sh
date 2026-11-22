@@ -37,8 +37,6 @@ compile_go_package github.com/abbot/go-http-auth \
 	auth.go basic.go digest.go md5crypt.go misc.go users.go
 compile_go_package github.com/ogier/pflag \
 	flag.go
-compile_go_package github.com/snabb/smtp \
-	smtp.go auth.go
 compile_go_package github.com/tantefred/zfswatcher/notifier \
 	notifier.go facility.go severity.go msg.go logger_*.go
 

@@ -3,6 +3,15 @@
                            version history
 
 
+version 0.6.0 UNRELEASED
+
+ - E-mail notifications use the standard library net/smtp instead of the
+   unmaintained github.com/snabb/smtp. STARTTLS is used when the server
+   offers it, connections time out after 30 seconds, and the messages now
+   carry Message-ID, MIME-Version and UTF-8 headers (non-ASCII subjects are
+   encoded). The configuration is unchanged.
+
+
 version 0.5.0 released 2026-11-21
 
  - First release of the tantefred fork. Linux (Debian, Proxmox VE) first.

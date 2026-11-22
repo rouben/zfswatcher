@@ -1,3 +1,5 @@
+//go:build cgo
+
 //
 // osutil_freebsd.go
 //

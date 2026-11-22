@@ -5,6 +5,9 @@
 
 version 0.6.0 (unreleased)
 
+ - The FreeBSD and Solaris builds are now vetted in CI; FreeBSD without cgo
+   compiles with stubs (the real FreeBSD binary still needs cgo).
+
  - Web interface hardening: the HTTP server has timeouts and a header size
    limit, all responses carry security headers (Content-Security-Policy,
    X-Frame-Options, X-Content-Type-Options, Referrer-Policy, and HSTS with

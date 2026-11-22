@@ -452,13 +452,19 @@ func locateHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
+	var err error
 	switch state {
 	case "on":
-		locateOn(dev)
+		err = locateOn(dev)
 	case "off":
-		locateOff(dev)
+		err = locateOff(dev)
 	default:
 		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+	if err != nil {
+		notify.Printf(notifier.WARNING, "locate %s %s failed: %s", dev, state, err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, locateRedirectTarget(r.PostFormValue("return")), http.StatusSeeOther)

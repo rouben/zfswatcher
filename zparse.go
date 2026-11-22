@@ -66,7 +66,7 @@ func parseZfsList(str string) map[string]*PoolUsageType {
 		if len(f) != 11 {
 			notify.Printf(notifier.CRIT, "invalid line %d in ZFS usage output: %s",
 				lineno+1, line)
-			notify.Attach(notifier.CRIT, str)
+			_ = notify.Attach(notifier.CRIT, str) // only fails for an invalid severity
 			continue
 		}
 		usagemap[f[0]] = &PoolUsageType{
@@ -224,7 +224,7 @@ func parseZpoolStatus(zpoolStatusOutput string) (pools []*PoolType, err error) {
 			length := runtime.Stack(buf, false)
 			str := string(buf[:length]) // truncate trailing garbage
 			notify.Printf(notifier.CRIT, "panic parsing status output: %v", p)
-			notify.Attach(notifier.CRIT, str+"\n"+zpoolStatusOutput)
+			_ = notify.Attach(notifier.CRIT, str+"\n"+zpoolStatusOutput)
 			// force the return value err to be true:
 			err = errors.New("panic parsing status output")
 		}
@@ -317,7 +317,7 @@ func parseZpoolStatus(zpoolStatusOutput string) (pools []*PoolType, err error) {
 			curpool.devs, err = parseConfstr(confstr)
 			if err != nil {
 				notify.Printf(notifier.ERR, "device configuration parse error: %s", err)
-				notify.Attach(notifier.ERR, confstr)
+				_ = notify.Attach(notifier.ERR, confstr)
 			}
 			confstr = ""
 			curpool.infostr = poolinfostr
@@ -326,7 +326,7 @@ func parseZpoolStatus(zpoolStatusOutput string) (pools []*PoolType, err error) {
 			s = stSTART
 		default:
 			notify.Printf(notifier.CRIT, "invalid line %d in status output: %s", lineno+1, line)
-			notify.Attach(notifier.CRIT, zpoolStatusOutput)
+			_ = notify.Attach(notifier.CRIT, zpoolStatusOutput)
 			return pools, errors.New("parser error")
 		}
 	}

@@ -47,9 +47,9 @@ var cfg *cfgType
 // Holder for global configuration information. Filled in by "gcfg".
 type cfgType struct {
 	Main struct {
-		Zpoolstatusrefresh uint
+		Zpoolstatusrefresh int
 		Zpoolstatuscmd     string
-		Zfslistrefresh     uint
+		Zfslistrefresh     int
 		Zfslistcmd         string
 		Zfslistusagecmd    string
 		Zpooliostatcmd     string
@@ -249,6 +249,22 @@ func checkCfgErr(cfgfile, sect, prof, param string, err error, errorSeen *bool) 
 // loopback interface, meant for a reverse proxy.
 const defaultWwwBind = "127.0.0.1:8081"
 
+// Allowed range of the refresh intervals in seconds. The upper limit also
+// keeps the conversion to time.Duration far away from overflowing.
+const (
+	minRefreshSeconds = 1
+	maxRefreshSeconds = 24 * 60 * 60
+)
+
+// checkRefresh validates a refresh interval given in seconds.
+func checkRefresh(sec int) error {
+	if sec < minRefreshSeconds || sec > maxRefreshSeconds {
+		return fmt.Errorf("value %d out of range, must be between %d and %d seconds",
+			sec, minRefreshSeconds, maxRefreshSeconds)
+	}
+	return nil
+}
+
 func getCfg() *cfgType {
 	var c cfgType
 	var errorSeen bool
@@ -278,6 +294,8 @@ func getCfg() *cfgType {
 	// read configuration settings:
 	err := gcfg.ReadFileInto(&c, cfgFile)
 	checkCfgErr(cfgFile, "", "", "", err, &errorSeen)
+	checkCfgErr(cfgFile, "main", "", "zpoolstatusrefresh", checkRefresh(c.Main.Zpoolstatusrefresh), &errorSeen)
+	checkCfgErr(cfgFile, "main", "", "zfslistrefresh", checkRefresh(c.Main.Zfslistrefresh), &errorSeen)
 
 	if errorSeen {
 		return nil
@@ -291,7 +309,7 @@ func setupLog(c *cfgType) *notifier.Notifier {
 
 	n := notifier.New()
 	if optDebug {
-		n.AddLoggerStdout(notifier.DEBUG)
+		_ = n.AddLoggerStdout(notifier.DEBUG) // fails only for an invalid severity
 	}
 
 	for prof, s := range c.Logfile {
@@ -324,7 +342,9 @@ func setupLog(c *cfgType) *notifier.Notifier {
 // Initial setup when the program starts.
 func setup() {
 	// ensure that zpool/zfs commands do not use localized messages:
-	os.Setenv("LC_ALL", "C")
+	if err := os.Setenv("LC_ALL", "C"); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: cannot set LC_ALL: %s\n", os.Args[0], err)
+	}
 
 	// command line flags:
 	pflag.StringVarP(&cfgFile, "conf", "c", CFGFILE, "configuration file path")
@@ -373,13 +393,13 @@ func setup() {
 func reconfigure() {
 	newcfg := getCfg()
 	if newcfg == nil {
-		notify.Send(notifier.CRIT, "invalid configuration "+cfgFile+", keeping old configuration")
+		notify.Print(notifier.CRIT, "invalid configuration ", cfgFile, ", keeping old configuration")
 		return
 	}
 	cfg = newcfg
 	newNotify := setupLog(cfg)
 	if newNotify == nil {
-		notify.Send(notifier.CRIT, "error setting up logs, keeping old logging configuration")
+		notify.Print(notifier.CRIT, "error setting up logs, keeping old logging configuration")
 	}
 	oldnotify := notify
 	notify = newNotify

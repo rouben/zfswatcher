@@ -1,12 +1,15 @@
 package main
 
 import (
+	"errors"
 	"html/template"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 )
 
 const (
@@ -171,5 +174,60 @@ func TestDefaultPasswordBanner(t *testing.T) {
 		if got := strings.Contains(b.String(), "alert alert-danger"); got != inUse {
 			t.Errorf("inUse=%v: banner present=%v", inUse, got)
 		}
+	}
+}
+
+func TestWebServerGracefulShutdown(t *testing.T) {
+	setupWebTest(t, false)
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := &http.Server{ReadHeaderTimeout: time.Second, Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})}
+	done := make(chan error, 1)
+	go func() {
+		// mirrors serveWeb: ErrServerClosed must map to nil
+		err := srv.Serve(ln)
+		if errors.Is(err, http.ErrServerClosed) {
+			err = nil
+		}
+		done <- err
+	}()
+	resp, err := http.Get("http://" + ln.Addr().String() + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+
+	if err := shutdownWebServer(srv, 5*time.Second); err != nil {
+		t.Fatalf("shutdown: %v", err)
+	}
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Errorf("serve returned %v, want nil", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("server did not stop")
+	}
+	if resp, err := http.Get("http://" + ln.Addr().String() + "/"); err == nil {
+		_ = resp.Body.Close()
+		t.Error("request after shutdown succeeded")
+	}
+}
+
+func TestServeWebShutdownIsNotAnError(t *testing.T) {
+	setupWebTest(t, false)
+	srv := &http.Server{ReadHeaderTimeout: time.Second, Addr: "127.0.0.1:0", Handler: http.NotFoundHandler()}
+	done := make(chan error, 1)
+	go func() { done <- serveWeb(srv, false) }()
+	time.Sleep(100 * time.Millisecond)
+	if err := shutdownWebServer(srv, 5*time.Second); err != nil {
+		t.Fatal(err)
+	}
+	if err := <-done; err != nil {
+		t.Errorf("serveWeb returned %v, want nil", err)
 	}
 }

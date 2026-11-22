@@ -6,11 +6,11 @@
 version 0.7.0 (unreleased)
 
  - New option "trustedproxies" in the [www] section: IP addresses or
-   networks of reverse proxies whose X-Forwarded-For, X-Real-IP and
+   networks of reverse proxies whose X-Forwarded-For and
    X-Forwarded-Proto headers are trusted. The default (empty) ignores the
    headers. Failed web logins are now logged as warnings with the client
    address. The README has nginx and Caddy examples; the proxy must pass
-   the original Host header on (CSRF protection).
+   the original Host header on ("$http_host" in nginx, CSRF protection).
 
 
 version 0.6.0 released 2026-11-22

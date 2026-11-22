@@ -180,16 +180,20 @@ Some notes:
 Run zfswatcher with `bind = 127.0.0.1:8081` and let a proxy on the same host
 terminate TLS. Three settings matter:
 
-- `proxy_set_header Host $host;` (nginx) or the default of Caddy: the proxy
+- `proxy_set_header Host $http_host;` (nginx) or the default of Caddy: the proxy
   **must** pass the original `Host` header on. The CSRF protection of the web
   interface compares the `Origin` header of POST requests with `Host`; with a
   wrong `Host` (for example `127.0.0.1:8081`) every "locate" request is
-  rejected with 403. The protection is not relaxed by the proxy settings.
+  rejected with 403. Use `$http_host`, not `$host`: `$host` drops the port,
+  so behind a non-standard port (`https://zfs.example:8443`) the `Origin`
+  and `Host` no longer match and POST requests fail with 403. The protection
+  is not relaxed by the proxy settings.
 - `trustedproxies` in the `[www]` section: space separated IP addresses or
-  CIDR networks of the proxies, here `127.0.0.1 ::1`. Only for connections
+  CIDR networks of the proxies, here `127.0.0.1 ::1` (IPv4 and IPv6 are
+  listed separately, `::/0` does not cover IPv4). Only for connections
   from these addresses zfswatcher evaluates `X-Forwarded-For` (from right to
   left, the first address which is not a trusted proxy is the client),
-  `X-Real-IP` (if there is no `X-Forwarded-For`) and `X-Forwarded-Proto`. The
+  and `X-Forwarded-Proto` (`X-Real-IP` is not used). The
   default is empty: the headers are ignored, because any client could forge
   them. The client address appears in the log message for failed web logins;
   a trusted `X-Forwarded-Proto: https` also enables the HSTS header.
@@ -202,7 +206,7 @@ nginx, zfswatcher under `/zfswatcher/` (`rootdir = "/zfswatcher"`):
 ```
 location /zfswatcher/ {
     proxy_pass http://127.0.0.1:8081;
-    proxy_set_header Host $host;
+    proxy_set_header Host $http_host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
 }

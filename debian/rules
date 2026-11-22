@@ -14,6 +14,10 @@
 # final "rm -rf debian/.debhelper" of dh_clean fail with "Permission denied".
 export GOFLAGS += -modcacherw
 
+# The binary reports the package version without the Debian revision, which
+# is also right for development builds like 0.5.0+git20261122.a6cae3c-1.
+export PKGVERSION := $(shell dpkg-parsechangelog -SVersion | sed 's/-[^-]*$$//')
+
 %:
 	dh $@
 

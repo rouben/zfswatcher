@@ -41,6 +41,10 @@ man8dir		= $(mandir)/man8
 
 VERSION		= $(shell fgrep VERSION version.go | cut -d\" -f2)
 
+# Version of the built binary and the packages. Equal to VERSION for releases;
+# CI overrides it for development builds (e.g. 0.5.0+git20261122.a6cae3c).
+PKGVERSION	?= $(VERSION)
+
 # Git revision archived by "make dist". Defaults to the current commit so that
 # CI builds the code under test; use REF=$(VERSION) to archive the release tag.
 REF		?= HEAD
@@ -58,16 +62,12 @@ endif
 all: zfswatcher
 
 zfswatcher:
-	$(GO) build -o $@
+	$(GO) build -ldflags "-X main.buildVersion=$(PKGVERSION)" -o $@
 
 clean: 
 	$(GO) clean
-	version=$(VERSION) &&						\
-	rm -f zfswatcher						\
-		zfswatcher-$${version}.tar.gz				\
-		zfswatcher-$${version}-*.rpm				\
-		zfswatcher_$${version}-*.deb				\
-		zfswatcher_$${version}-*.changes
+	$(RM) zfswatcher zfswatcher-*.tar.gz zfswatcher-*.rpm		\
+		zfswatcher_*.deb zfswatcher_*.changes
 
 install: zfswatcher
 	install -d $(DESTDIR)$(sbindir) $(DESTDIR)$(sysconfdir)/zfs	\
@@ -83,7 +83,7 @@ install: zfswatcher
 
 # Make tarball:
 dist:
-	version=$(VERSION) &&						\
+	version=$(PKGVERSION) &&						\
 	git archive --prefix=zfswatcher-$${version}/			\
 		-o zfswatcher-$${version}.tar.gz $(REF)
 
@@ -97,7 +97,7 @@ newdebversion:
 
 # Make Debian package:
 deb:
-	version=$(VERSION) &&						\
+	version=$(PKGVERSION) &&						\
 	dpkg-buildpackage -b -uc -tc &&					\
 	mv ../zfswatcher_$${version}-*.deb 				\
 		../zfswatcher_$${version}-*.changes 			\
@@ -105,7 +105,7 @@ deb:
 
 # Make RPM package:
 rpm:	dist
-	version=$(VERSION) &&						\
+	version=$(PKGVERSION) &&						\
 	rpmbuild=$(shell mktemp -d "/tmp/zfswatcher-rpmbuild-XXXXXXXX");\
 	mkdir -p $$rpmbuild/TMP &&					\
 	mkdir -p $$rpmbuild/BUILD &&					\

@@ -507,8 +507,7 @@ func TestZpoolIostatStreamReader(t *testing.T) {
 	t.Run("two entries in one read", func(t *testing.T) {
 		out := collect(strings.NewReader(entry("a") + "\n" + entry("b") + "\n"))
 		if len(out) != 2 {
-			t.Skipf("bug: ZpoolIostatStreamReader handles only one entry per Read(); "+
-				"got %d of 2 entries when both arrive in a single read", len(out))
+			t.Errorf("got %d of 2 entries when both arrive in a single read", len(out))
 		}
 	})
 	t.Run("truncated last entry is dropped", func(t *testing.T) {

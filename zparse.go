@@ -472,7 +472,12 @@ func ZpoolIostatStreamReader(ch chan *ZpoolIostatTable, r io.Reader) {
 		if n > 0 {
 			collectbuf = collectbuf + string(readbuf[:n])
 			// two consecutive newlines (an empty line) separates two iostat entries:
-			if pos := strings.Index(collectbuf, "\n\n"); pos != -1 {
+			// one read may contain several complete entries:
+			for {
+				pos := strings.Index(collectbuf, "\n\n")
+				if pos == -1 {
+					break
+				}
 				ch <- ZpoolIostatParser(collectbuf[:pos+1]) // include 1 newline
 				collectbuf = collectbuf[pos+2:]             // skip both newlines
 			}

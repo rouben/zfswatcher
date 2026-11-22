@@ -57,4 +57,11 @@
 	</div>
 
 	<div class="container-fluid">
+		{{ if .DefaultPasswordWarning }}
+		<div class="alert alert-danger" role="alert">
+			<strong>Warning:</strong> a web user still uses the well-known example
+			password. Set a new one with <code>zfswatcher -P</code> in the
+			configuration file.
+		</div>
+		{{ end }}
 		<div class="row-fluid">

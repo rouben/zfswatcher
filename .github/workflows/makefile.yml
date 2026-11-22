@@ -4,7 +4,7 @@ on:
   push:
     branches: [contrib]
   pull_request:
-    branches: [contrib]
+    branches: [contrib, master]
 
 permissions:
   contents: read
@@ -63,9 +63,9 @@ jobs:
           name: ZFSWatcher RPMs
           path: '*.rpm'
 
-      # Only publish from pushes to contrib, never from pull requests.
+      # Only publish from pushes to contrib, never from pull requests or master.
       - name: Publish pre-release
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/contrib'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

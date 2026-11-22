@@ -9,6 +9,10 @@ zfswatcher (0.5.0-1) unstable; urgency=medium
   * Fix wrong format arguments in the device state change notifications.
   * Add tests with fixtures from Proxmox VE and Debian 13, and a CI pipeline
     with lint, format, race-detector tests and vulnerability checks.
+  * Run the daemon as the system user zfswatcher with a systemd unit (adduser,
+    LogsDirectory, hardening). The web interface listens on 127.0.0.1:8081
+    by default instead of :80; "bind" stays configurable; drop the SysV init script. Install
+    zfswatcher-ledctl and its udev rule. Fix the logrotate rule.
   * Build a static binary without cgo on Linux; the cgo C code crashed
     with SIGILL on CPUs without AVX.
   * Kill external commands after 60 seconds so that a hanging zpool does

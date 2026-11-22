@@ -20,6 +20,20 @@ set -e
 
 case "$1" in
     configure)
+        # The daemon runs as an unprivileged system user (see the systemd unit).
+        if ! getent passwd zfswatcher >/dev/null; then
+            adduser --system --group --no-create-home --home /nonexistent \
+                --gecos "zfswatcher daemon" zfswatcher
+        fi
+        # Let members of the zfswatcher group control enclosure LEDs (see the
+        # rule installed in /usr/lib/udev/rules.d).
+        if [ -d /sys/class/enclosure ] && command -v udevadm >/dev/null 2>&1; then
+            udevadm trigger --subsystem-match=enclosure --action=change || true
+        fi
+        # Logs of earlier versions may be owned by root.
+        if [ -d /var/log/zfswatcher ]; then
+            chown -R zfswatcher:zfswatcher /var/log/zfswatcher
+        fi
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

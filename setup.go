@@ -245,6 +245,10 @@ func checkCfgErr(cfgfile, sect, prof, param string, err error, errorSeen *bool) 
 }
 
 // Read configuration.
+// Default listening address of the web interface: an unprivileged port on the
+// loopback interface, meant for a reverse proxy.
+const defaultWwwBind = "127.0.0.1:8081"
+
 func getCfg() *cfgType {
 	var c cfgType
 	var errorSeen bool
@@ -256,6 +260,8 @@ func getCfg() *cfgType {
 	c.Main.Zfslistcmd = "zfs list -H -o name,avail,used,logicalused,usedsnap,usedds,usedrefreserv,usedchild,refer,mountpoint,compressratio -d 0"
 	c.Main.Zfslistusagecmd = "zfs list -H -o name,avail,used,logicalused,usedsnap,usedds,usedrefreserv,usedchild,refer,mountpoint,compressratio -r -t all"
 	c.Leds.Ledctlcmd = "ledctl"
+	// Without this the web server would listen on port 80.
+	c.Www.Bind = defaultWwwBind
 	c.Severity.Pooladded = notifier.INFO
 	c.Severity.Poolremoved = notifier.INFO
 	c.Severity.Poolstatuschanged = notifier.INFO

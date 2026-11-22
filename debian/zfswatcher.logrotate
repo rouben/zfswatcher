@@ -1,5 +1,8 @@
-/var/lib/zfswatcher.log
+/var/log/zfswatcher/*.log
 {
+	# the logs belong to the unprivileged service user
+	su zfswatcher zfswatcher
+	create 0640 zfswatcher zfswatcher
 	rotate 6
 	monthly
 	missingok
@@ -7,6 +10,7 @@
 	compress
 	delaycompress
 	postrotate
-		start-stop-daemon -K -p /var/run/zfswatcher.pid -s HUP -x /usr/sbin/zfswatcher -q
+		# SIGHUP makes zfswatcher reopen its log files
+		systemctl kill --signal=HUP zfswatcher.service >/dev/null 2>&1 || true
 	endscript
 }

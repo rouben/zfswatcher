@@ -1,0 +1,3 @@
+etc/zfswatcher.service usr/lib/systemd/system/
+etc/zfswatcher-ledctl usr/sbin/
+etc/80-enclosure-zfswatcher.rules usr/lib/udev/rules.d/

@@ -34,7 +34,13 @@ dpkg -i zfswatcher_0.5.0-1_amd64.deb
 ```
 
 The service is started by default according to the Debian and Ubuntu
-conventions.
+conventions. It runs as the unprivileged system user `zfswatcher` (created by
+the package); see "Running as root" below if you need that for LED control.
+
+When upgrading from 0.4.x: the daemon no longer runs as root, the SysV init
+script is replaced by a systemd unit, and `/var/log/zfswatcher/` is owned by
+the new user. Add `SUSPENDED:alert` to `poolstatemap` in your own
+`/etc/zfs/zfswatcher.conf` (see `NEWS`).
 
 Development builds are published automatically from the `contrib` branch as
 the `latest-dev` pre-release.
@@ -129,7 +135,7 @@ zfswatcher -t
 Restart the process:
 
 ```sh
-service zfswatcher restart
+systemctl restart zfswatcher
 ```
 
 Some notes:
@@ -137,16 +143,39 @@ Some notes:
 - See the configuration file comments for information about the configuration
   settings.
 
-- Enclosure LED management is disabled by default. Currently an external
-  utility `ledctl` (part of the ledmon package) is required for this
-  functionality.
+- Enclosure LED management is disabled by default. The bundled helper
+  `/usr/sbin/zfswatcher-ledctl` (the default `ledctlcmd`) works without root
+  through a udev rule that gives the `zfswatcher` group access to the SES
+  enclosure. Alternatively the external utility `ledctl` (part of the ledmon
+  package) can be used, which needs root, see below.
+
+- Running as root: `ledctl` needs root. Run `systemctl edit zfswatcher` and add
+
+  ```
+  [Service]
+  User=root
+  Group=root
+  ```
 
 - Logging to file `/var/log/zfswatcher/zfswatcher.log` and local syslog
   daemon is enabled by default.
 
 - E-mail notifications are disabled by default.
 
-- The embedded web server is disabled by default.
+- The embedded web server is disabled by default. When enabled it listens on
+  `127.0.0.1:8081` (`bind` in the `[www]` section), meant for a reverse proxy
+  on the same host. Use `bind = :8081` to listen on all interfaces. Example
+  for nginx under the path `/zfswatcher/` (not tested with every setup):
+
+  ```
+  location /zfswatcher/ {
+      proxy_pass http://127.0.0.1:8081;
+  }
+  ```
+
+  together with `rootdir = "/zfswatcher"` in the `[www]` section of
+  `zfswatcher.conf`. The proxy passes the login of the built-in HTTP
+  authentication on; put TLS on the proxy.
 
 - If you change the default web interface templates, it is best to copy them
   from `/usr/share/zfswatcher/www` to another location and change the

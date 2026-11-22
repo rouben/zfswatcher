@@ -39,7 +39,7 @@ man1dir		= $(mandir)/man1
 man5dir		= $(mandir)/man5
 man8dir		= $(mandir)/man8
 
-VERSION		= $(shell fgrep VERSION version.go | cut -d\" -f2)
+VERSION		= $(shell sed -n 's/^const VERSION = "\(.*\)"$$/\1/p' version.go)
 
 # Version of the built binary and the packages. Equal to VERSION for releases;
 # CI overrides it for development builds (e.g. 0.5.0+git20261122153012.a6cae3c).

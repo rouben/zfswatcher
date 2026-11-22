@@ -392,11 +392,22 @@ func setup() {
 }
 
 // Reconfigure event (usually SIGHUP).
+// persisterPath returns the state file used since startup ("" if disabled).
+func persisterPath() string {
+	if persister == nil {
+		return ""
+	}
+	return persister.path
+}
+
 func reconfigure() {
 	newcfg := getCfg()
 	if newcfg == nil {
 		notify.Print(notifier.CRIT, "invalid configuration ", cfgFile, ", keeping old configuration")
 		return
+	}
+	if persisterPath() != newcfg.Main.Statefile {
+		notify.Print(notifier.WARNING, "statefile change needs a restart (still using \"", persisterPath(), "\")")
 	}
 	cfg = newcfg
 	newNotify := setupLog(cfg)

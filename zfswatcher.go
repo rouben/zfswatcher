@@ -348,6 +348,10 @@ func main() {
 			// for now just print the output to stdout: XXX
 			go func() {
 				for i := range iostat.ch {
+					if i == nil {
+						// failed read or malformed entry; keep reading
+						continue
+					}
 					fmt.Printf("iostat output: %+v\n", *i)
 				}
 			}()

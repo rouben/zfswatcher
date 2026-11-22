@@ -11,6 +11,7 @@ Fixes
    devices instead of with a bogus device named "The".
  - The iostat stream reader no longer loses entries that arrive together
    in a single read.
+ - A failed or malformed iostat read no longer crashes the daemon.
 
 
 version 0.6.0 released 2026-11-22

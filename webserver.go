@@ -25,6 +25,7 @@ import (
 	"context"
 	"errors"
 	"html/template"
+	"net"
 	"net/http"
 	"sort"
 	"strings"
@@ -76,21 +77,32 @@ func webServer() *http.Server {
 		MaxHeaderBytes:    64 << 10,
 	}
 	go func() {
-		if err := serveWeb(srv, tlsEnabled); err != nil {
-			notify.Printf(notifier.ERR, "error starting web server: %s", err)
+		if err := serveWeb(srv, nil, tlsEnabled); err != nil {
+			notify.Printf(notifier.ERR, "web server failed: %s", err)
 		}
 	}()
 	return srv
 }
 
-// serveWeb runs srv until it fails or is shut down. A regular shutdown
-// (http.ErrServerClosed) is not an error.
-func serveWeb(srv *http.Server, tlsEnabled bool) error {
+// serveWeb runs srv on ln until it fails or is shut down. A nil ln means
+// listening on srv.Addr. A regular shutdown (http.ErrServerClosed) is not an
+// error.
+func serveWeb(srv *http.Server, ln net.Listener, tlsEnabled bool) error {
+	if ln == nil {
+		addr := srv.Addr
+		if addr == "" {
+			addr = ":http"
+		}
+		var err error
+		if ln, err = net.Listen("tcp", addr); err != nil {
+			return err
+		}
+	}
 	var err error
 	if tlsEnabled {
-		err = srv.ListenAndServeTLS(cfg.Www.Certfile, cfg.Www.Keyfile)
+		err = srv.ServeTLS(ln, cfg.Www.Certfile, cfg.Www.Keyfile)
 	} else {
-		err = srv.ListenAndServe()
+		err = srv.Serve(ln)
 	}
 	if errors.Is(err, http.ErrServerClosed) {
 		return nil
@@ -103,7 +115,12 @@ func serveWeb(srv *http.Server, tlsEnabled bool) error {
 func shutdownWebServer(srv *http.Server, timeout time.Duration) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	return srv.Shutdown(ctx)
+	if err := srv.Shutdown(ctx); err != nil {
+		// timeout: forcibly close connections that are still open
+		_ = srv.Close()
+		return err
+	}
+	return nil
 }
 
 // newWebHandler builds the complete handler tree of the web interface.

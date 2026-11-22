@@ -220,10 +220,18 @@ func TestWebServerGracefulShutdown(t *testing.T) {
 
 func TestServeWebShutdownIsNotAnError(t *testing.T) {
 	setupWebTest(t, false)
-	srv := &http.Server{ReadHeaderTimeout: time.Second, Addr: "127.0.0.1:0", Handler: http.NotFoundHandler()}
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := &http.Server{ReadHeaderTimeout: time.Second, Handler: http.NotFoundHandler()}
 	done := make(chan error, 1)
-	go func() { done <- serveWeb(srv, false) }()
-	time.Sleep(100 * time.Millisecond)
+	go func() { done <- serveWeb(srv, ln, false) }()
+	resp, err := http.Get("http://" + ln.Addr().String() + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
 	if err := shutdownWebServer(srv, 5*time.Second); err != nil {
 		t.Fatal(err)
 	}

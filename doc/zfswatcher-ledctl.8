@@ -1,0 +1,103 @@
+.\"-
+.\" zfswatcher-ledctl.8
+.\"
+.\" This file is part of zfswatcher.
+.\"
+.\" Zfswatcher is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" Zfswatcher is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with zfswatcher. If not, see <http://www.gnu.org/licenses/>.
+.\"
+.TH ZFSWATCHER-LEDCTL 8 "2026-11-22" "version 0.6.0"
+.SH NAME
+zfswatcher-ledctl \- control disk enclosure LEDs through sysfs
+.SH SYNOPSIS
+.B zfswatcher-ledctl
+.IR pattern = device
+.RI [ pattern = device ...]
+.SH DESCRIPTION
+.B zfswatcher-ledctl
+is a small shell script which emulates a subset of
+.BR ledctl (8).
+It sets the fault and locate LEDs of disk slots in SES enclosures
+using the
+.B fault
+and
+.B locate
+files in sysfs (below
+.IR /sys/block/ disk /device/enclosure_device:* ).
+Unlike
+.BR ledctl (8)
+it needs no root privileges as long as those files are writable by
+the user, which the udev rule described below ensures for the
+.B zfswatcher
+group.
+.PP
+.BR zfswatcher (8)
+can call this script as the LED control command in its configuration.
+.SH ARGUMENTS
+Each argument has the form
+.IR pattern = device .
+The
+.I device
+is a block device, for example
+.IR /dev/disk/by-vdev/A1 .
+Symbolic links are resolved; for device-mapper devices the first
+underlying device is used.
+The following patterns are supported:
+.TP
+.B normal
+Switch both the fault and the locate LED off.
+.TP
+.B failure
+Switch the fault LED on.
+.TP
+.B failure_off
+Switch the fault LED off.
+.TP
+.B locate
+Switch the locate LED on.
+.TP
+.B locate_off
+Switch the locate LED off.
+.PP
+Other patterns are reported as "Unknown pattern name" and skipped.
+.SH FILES
+.TP
+.I /usr/lib/udev/rules.d/80-enclosure-zfswatcher.rules
+udev rule which gives the group
+.B zfswatcher
+read and write access to
+.IR /sys/class/enclosure .
+Members of that group (including the
+.B zfswatcher
+daemon user) can therefore use the script.
+.SH EXIT STATUS
+The script always exits with 0, even if a device has no enclosure or a
+sysfs file is missing or not writable.
+Problems are printed to standard output ("Missing enclosure link for
+device", "Missing file", "Permission denied"), as is the result of each
+change ("SUCCESS" or "FAIL").
+.SH EXAMPLES
+Switch the locate LED of a disk on:
+.PP
+.RS
+zfswatcher-ledctl locate=/dev/disk/by-vdev/A1
+.RE
+.PP
+Switch the fault LED on:
+.PP
+.RS
+zfswatcher-ledctl failure=/dev/disk/by-vdev/A1
+.RE
+.SH SEE ALSO
+.BR zfswatcher (8),
+.BR ledctl (8)

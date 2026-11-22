@@ -11,6 +11,14 @@ linters:
     - ineffassign
     - staticcheck
     - unused
+    - gosec
+    - bodyclose
+  settings:
+    gosec:
+      excludes:
+        # G204: zpool, zfs, ledctl and the notification commands are run on
+        # purpose; their paths come from the admin-owned configuration.
+        - G204
 
 formatters:
   enable:

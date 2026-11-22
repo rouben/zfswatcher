@@ -30,10 +30,6 @@ case "$1" in
         if [ -d /sys/class/enclosure ] && command -v udevadm >/dev/null 2>&1; then
             udevadm trigger --subsystem-match=enclosure --action=change || true
         fi
-        # Logs of earlier versions may be owned by root.
-        if [ -d /var/log/zfswatcher ]; then
-            chown -R zfswatcher:zfswatcher /var/log/zfswatcher
-        fi
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

@@ -71,6 +71,13 @@ jobs:
       - name: Build Debian package
         run: make deb
 
+      # Errors fail the job; warnings and info are only shown. Check the
+      # output of the first run and add debian/*.lintian-overrides if needed.
+      - name: Lint Debian package (lintian)
+        run: |
+          sudo apt-get install -y lintian
+          lintian --display-info --pedantic --fail-on error *.deb
+
       - name: Upload Debian package and changelog
         uses: actions/upload-artifact@v7
         with:

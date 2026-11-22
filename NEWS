@@ -5,6 +5,9 @@
 
 version 0.6.0 (unreleased)
 
+ - The FreeBSD and Solaris builds are now vetted in CI; FreeBSD without cgo
+   compiles with stubs (the real FreeBSD binary still needs cgo).
+   
  - Web passwords are now stored as bcrypt hashes ("$2y$..."). "zfswatcher -P"
    reads the password without echo (twice on a terminal, one line from
    stdin otherwise) and prints a bcrypt hash; the example configuration uses
@@ -36,6 +39,11 @@ version 0.6.0 (unreleased)
    issues, CVE-2018-14040, CVE-2018-14042, CVE-2019-8331) and jQuery
    3.2.1 -> 3.7.1. The bundled Bootstrap license file is now the
    MIT license text.
+
+ - New man page zfswatcher-ledctl(8). The dead html5shim script (loaded
+   over http, for IE 8 and older) is removed from the web pages. The Debian
+   postinst no longer runs "chown -R" on /var/log/zfswatcher; systemd sets
+   the ownership via LogsDirectory= when the service starts.
 
 version 0.5.0 released 2026-11-21
 

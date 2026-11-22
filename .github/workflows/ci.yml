@@ -56,6 +56,13 @@ jobs:
       - name: go vet
         run: go vet ./...
 
+      # FreeBSD and Solaris are only kept compilable (no cgo here).
+      - name: go vet (FreeBSD)
+        run: GOOS=freebsd go vet ./...
+
+      - name: go vet (Solaris)
+        run: GOOS=solaris GOARCH=amd64 go vet ./...
+
       - name: go test
         run: go test -race -covermode=atomic -coverprofile=coverage.out ./...
 

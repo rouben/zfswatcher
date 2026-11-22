@@ -45,6 +45,10 @@ jobs:
   test:
     name: Test (race detector, coverage)
     runs-on: ubuntu-latest
+    env:
+      # Minimum total statement coverage in percent (measured 35.7 when set,
+      # minus a 2 point margin, rounded down). Raise it when coverage grows.
+      COVERAGE_MIN: 33
     steps:
       - uses: actions/checkout@v7
 
@@ -83,6 +87,13 @@ jobs:
             go tool cover -func=coverage.out | tail -n 1
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check minimum coverage
+        run: |
+          total=$(go tool cover -func=coverage.out | awk '/^total:/ { sub(/%/, "", $NF); print $NF }')
+          echo "Total coverage: ${total}% (minimum: ${COVERAGE_MIN}%)"
+          awk -v t="$total" -v m="$COVERAGE_MIN" 'BEGIN { exit !(t + 0 >= m + 0) }' ||
+            { echo "::error::Coverage ${total}% is below the minimum ${COVERAGE_MIN}%"; exit 1; }
 
       - uses: actions/upload-artifact@v7
         with:

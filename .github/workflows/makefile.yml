@@ -29,12 +29,12 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y build-essential rpm dpkg-dev debhelper
 
       # Every build of this workflow is a development build with its own version,
-      # e.g. 0.5.0+git20261122.a6cae3c. Pull requests get one too (same code
+      # e.g. 0.5.0+git20261122153012.a6cae3c. Pull requests get one too (same code
       # path); their sha is that of the merge commit checked out by Actions.
       - name: Compute development version
         run: |
           base=$(sed -n 's/^const VERSION = "\(.*\)"$/\1/p' version.go)
-          date=$(git log -1 --format=%cd --date=format:%Y%m%d)
+          date=$(TZ=UTC git log -1 --format=%cd --date=format-local:%Y%m%d%H%M%S)
           sha=$(git rev-parse --short HEAD)
           echo "PKGVERSION=${base}+git${date}.${sha}" >> "$GITHUB_ENV"
 

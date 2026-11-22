@@ -3,6 +3,13 @@
                            version history
 
 
+zfswatcher 0.7.0 (unreleased)
+
+Fixes
+
+ - The web server now shuts down gracefully on SIGTERM/SIGINT: running
+   requests get up to 5 seconds to finish and no new ones are accepted.
+
 version 0.6.0 released 2026-11-22
 
 Upgrade notes

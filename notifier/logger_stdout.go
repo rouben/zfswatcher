@@ -34,7 +34,7 @@ func (n *Notifier) loggerStdout(ch chan *Msg) {
 		case MSGTYPE_MESSAGE:
 			fmt.Println(m.String())
 		case MSGTYPE_ATTACHMENT:
-			fmt.Println(">" + strings.Replace(strings.TrimRight(m.Text, "\n"), "\n", "\n>", -1))
+			fmt.Println(">" + strings.ReplaceAll(strings.TrimRight(m.Text, "\n"), "\n", "\n>"))
 		}
 	}
 }

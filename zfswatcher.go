@@ -208,7 +208,7 @@ func checkZpoolStatus(os, ns []*PoolType) {
 	}
 	// attach complete pool status for pools which had notifications
 	for name, severity := range notificationSev {
-		notify.Attach(severity, ns_pools[name].infostr)
+		_ = notify.Attach(severity, ns_pools[name].infostr) // only fails for an invalid severity
 	}
 	// update device LEDs
 	if cfg.Leds.Enable && len(ledsToSet) > 0 {
@@ -299,8 +299,7 @@ func main() {
 
 	// create a pid file if desired, remove it at the end of main()
 	if cfg.Main.Pidfile != "" {
-		makePidFile(cfg.Main.Pidfile)
-		defer removePidFile(cfg.Main.Pidfile)
+		defer setupPidFile(cfg.Main.Pidfile)()
 	}
 
 	notify.Print(notifier.INFO, "zfswatcher starting")
@@ -422,7 +421,8 @@ EXIT:
 	notify.Print(notifier.INFO, "zfswatcher stopping")
 
 	if iostat.process != nil {
-		iostat.process.Stop()
+		// Stop returns the "killed" error by design, see its comment.
+		_ = iostat.process.Stop()
 	}
 
 	// XXX persist data?

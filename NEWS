@@ -45,6 +45,15 @@ version 0.6.0 (unreleased)
    postinst no longer runs "chown -R" on /var/log/zfswatcher; systemd sets
    the ownership via LogsDirectory= when the service starts.
 
+ - Errors are no longer ignored silently. A pid file which cannot be written
+   (for example an old "pidfile = /var/run/zfswatcher.pid" while running as
+   the user zfswatcher) is now logged as an error; the daemon keeps running.
+   New log files are created with mode 0640 instead of 0666 (existing files
+   keep their mode). "zpoolstatusrefresh" and "zfslistrefresh" must be
+   between 1 and 86400 seconds; other values are rejected as configuration
+   errors. A failing "locate" request in the web interface is logged and
+   answered with an error.
+
 version 0.5.0 released 2026-11-21
 
  - First release of the tantefred fork. Linux (Debian, Proxmox VE) first.

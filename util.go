@@ -47,7 +47,7 @@ func getCommandOutput(cmdstr string) (string, error) {
 	cmdf := strings.Fields(cmdstr)
 	ctx, cancel := context.WithTimeout(context.Background(), commandTimeout)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, cmdf[0], cmdf[1:]...)
+	cmd := exec.CommandContext(ctx, cmdf[0], cmdf[1:]...) //nolint:gosec // command from admin config
 	// Do not wait forever for the output pipes if the killed process (or a
 	// child of it) still holds them open.
 	cmd.WaitDelay = 5 * time.Second
@@ -59,7 +59,7 @@ func getCommandOutput(cmdstr string) (string, error) {
 		notify.Print(notifier.CRIT,
 			`running "`, cmdstr, `" failed: `, err)
 		if len(out) != 0 {
-			notify.Attach(notifier.CRIT, string(out))
+			_ = notify.Attach(notifier.CRIT, string(out)) // only fails for an invalid severity
 		}
 		return "", err
 	}
@@ -76,7 +76,7 @@ type BackgroundProcess struct {
 // Run external command in background.
 func NewBackgroundProcess(cmdstr string) (*BackgroundProcess, error) {
 	cmdf := strings.Fields(cmdstr)
-	cmd := exec.Command(cmdf[0], cmdf[1:]...)
+	cmd := exec.Command(cmdf[0], cmdf[1:]...) //nolint:gosec // command from admin config
 	cmdout, err := cmd.StdoutPipe()
 	if err != nil {
 		notify.Print(notifier.ERR,
@@ -99,7 +99,7 @@ func NewBackgroundProcess(cmdstr string) (*BackgroundProcess, error) {
 
 // Stop a running background process.
 func (p *BackgroundProcess) Stop() error {
-	p.Cmd.Process.Kill()
+	_ = p.Cmd.Process.Kill() // may already have exited; Wait reports the outcome
 	// We assume that the background process is behaving nicely and is
 	// not blocking signals etc.
 	err := p.Cmd.Wait()
@@ -278,22 +278,37 @@ func legalPoolName(str string) bool {
 
 // Write our pid to a file.
 func makePidFile(filename string) (err error) {
-	f, err := os.Create(filename)
+	f, err := os.Create(filename) //nolint:gosec // path from admin config
 	if err != nil {
 		return err
 	}
 	_, err = fmt.Fprintf(f, "%d\n", os.Getpid())
 	if err != nil {
-		f.Close()
-		os.Remove(filename)
+		_ = f.Close()           // the write error is the one to report
+		_ = os.Remove(filename) // best-effort removal of the partial file
 		return err
 	}
 	err = f.Close()
 	if err != nil {
-		os.Remove(filename)
+		_ = os.Remove(filename) // best-effort removal of the partial file
 		return err
 	}
 	return nil
+}
+
+// setupPidFile writes the pid file and returns the function which removes it
+// again. An empty filename means "no pid file". A failure is logged and does
+// not stop the daemon (typical cause: the service user may not write to the
+// directory of an old "pidfile" setting such as /var/run/zfswatcher.pid).
+func setupPidFile(filename string) (cleanup func()) {
+	if filename == "" {
+		return func() {}
+	}
+	if err := makePidFile(filename); err != nil {
+		notify.Printf(notifier.ERR, "cannot write pid file %s: %s", filename, err)
+		return func() {}
+	}
+	return func() { _ = removePidFile(filename) } // best-effort at exit
 }
 
 // Remove pid file.

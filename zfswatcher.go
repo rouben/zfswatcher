@@ -30,6 +30,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
@@ -53,6 +54,23 @@ var currentState struct {
 var iostat struct {
 	process *BackgroundProcess
 	ch      chan *ZpoolIostatTable
+}
+
+// zpoolHealth remembers the outcome of the most recent zpool status query
+// for the /healthz endpoint of the web interface.
+var zpoolHealth struct {
+	mutex sync.Mutex
+	seen  bool // a query was made at all
+	ok    bool // command ran and its output was parsed
+	at    time.Time
+}
+
+// recordZpoolQuery stores the result of a zpool status query (command and
+// parser both succeeded when ok is true).
+func recordZpoolQuery(ok bool, at time.Time) {
+	zpoolHealth.mutex.Lock()
+	zpoolHealth.seen, zpoolHealth.ok, zpoolHealth.at = true, ok, at
+	zpoolHealth.mutex.Unlock()
 }
 
 var startTime time.Time
@@ -305,6 +323,7 @@ func main() {
 	notify.Print(notifier.INFO, "zfswatcher starting")
 
 	var statusTicker, zfslistTicker *time.Ticker
+	var webSrv *http.Server
 
 	// get the initial zpool status:
 	out, err := getCommandOutput(cfg.Main.Zpoolstatuscmd)
@@ -317,6 +336,7 @@ func main() {
 		notify.Print(notifier.CRIT, "exiting, parsing ZFS status failed")
 		goto EXIT
 	}
+	recordZpoolQuery(true, time.Now())
 	out, err = getCommandOutput(cfg.Main.Zfslistcmd)
 	if err != nil {
 		notify.Print(notifier.CRIT, "exiting, getting ZFS disk usage failed")
@@ -356,7 +376,7 @@ func main() {
 
 	// start a web server goroutine:
 	if cfg.Www.Enable {
-		go webServer()
+		webSrv = webServer()
 	}
 
 	// initialize ticker timers and go in main loop:
@@ -372,14 +392,17 @@ MAINLOOP:
 		case <-statusTicker.C:
 			zpoolStatusOutput, err := getCommandOutput(cfg.Main.Zpoolstatuscmd)
 			if err != nil {
+				recordZpoolQuery(false, time.Now())
 				notify.Print(notifier.CRIT, "getting ZFS status failed")
 				continue
 			}
 			newstate, err := parseZpoolStatus(zpoolStatusOutput)
 			if err != nil {
+				recordZpoolQuery(false, time.Now())
 				notify.Print(notifier.CRIT, "parsing ZFS status failed")
 				continue
 			}
+			recordZpoolQuery(true, time.Now())
 			checkZpoolStatus(currentState.state, newstate)
 			currentState.mutex.Lock()
 			currentState.state = newstate
@@ -419,6 +442,13 @@ MAINLOOP:
 	zfslistTicker.Stop()
 EXIT:
 	notify.Print(notifier.INFO, "zfswatcher stopping")
+
+	// stop the web server first: finish running requests, accept no new ones.
+	if webSrv != nil {
+		if err := shutdownWebServer(webSrv, webShutdownTimeout); err != nil {
+			notify.Printf(notifier.ERR, "error stopping web server: %s", err)
+		}
+	}
 
 	if iostat.process != nil {
 		// Stop returns the "killed" error by design, see its comment.

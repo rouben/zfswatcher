@@ -5,12 +5,21 @@
 
 version 0.7.0 (unreleased)
 
-Changes
+New features
 
+ - The web interface has a health check at "<rootdir>/healthz" for monitoring
+   tools such as Uptime Kuma. It needs no login and reveals nothing about
+   pools: 200 "ok" if the last "zpool status" query worked and is not older
+   than three times "zpoolstatusrefresh", otherwise 503 with "starting",
+   "stale" or "error".
  - New option "commandtimeout" in section [main]: the time in seconds
    (1 to 3600, default 60) after which a hanging zpool/zfs command is
    killed. It is read at startup only.
 
+Fixes
+
+ - The web server now shuts down gracefully on SIGTERM/SIGINT: running
+   requests get up to 5 seconds to finish and no new ones are accepted.
 
 version 0.6.0 released 2026-11-22
 

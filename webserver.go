@@ -23,8 +23,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"html/template"
+	"net"
 	"net/http"
 	"net/netip"
 	"sort"
@@ -47,7 +49,12 @@ func noDirListing(h http.Handler) http.HandlerFunc {
 	})
 }
 
-func webServer() {
+// webShutdownTimeout is how long running requests get to finish on shutdown.
+const webShutdownTimeout = 5 * time.Second
+
+// webServer sets up and starts the web server in the background. The returned
+// server can be passed to shutdownWebServer.
+func webServer() *http.Server {
 	var err error
 
 	templates = template.New("zfswatcher").Funcs(template.FuncMap{
@@ -71,14 +78,51 @@ func webServer() {
 		IdleTimeout:       120 * time.Second,
 		MaxHeaderBytes:    64 << 10,
 	}
+	go func() {
+		if err := serveWeb(srv, nil, tlsEnabled); err != nil {
+			notify.Printf(notifier.ERR, "web server failed: %s", err)
+		}
+	}()
+	return srv
+}
+
+// serveWeb runs srv on ln until it fails or is shut down. A nil ln means
+// listening on srv.Addr. A regular shutdown (http.ErrServerClosed) is not an
+// error.
+func serveWeb(srv *http.Server, ln net.Listener, tlsEnabled bool) error {
+	if ln == nil {
+		addr := srv.Addr
+		if addr == "" {
+			addr = ":http"
+		}
+		var err error
+		if ln, err = net.Listen("tcp", addr); err != nil {
+			return err
+		}
+	}
+	var err error
 	if tlsEnabled {
-		err = srv.ListenAndServeTLS(cfg.Www.Certfile, cfg.Www.Keyfile)
+		err = srv.ServeTLS(ln, cfg.Www.Certfile, cfg.Www.Keyfile)
 	} else {
-		err = srv.ListenAndServe()
+		err = srv.Serve(ln)
 	}
-	if err != nil {
-		notify.Printf(notifier.ERR, "error starting web server: %s", err)
+	if errors.Is(err, http.ErrServerClosed) {
+		return nil
 	}
+	return err
+}
+
+// shutdownWebServer stops accepting new connections and waits up to timeout
+// for running requests to finish.
+func shutdownWebServer(srv *http.Server, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		// timeout: forcibly close connections that are still open
+		_ = srv.Close()
+		return err
+	}
+	return nil
 }
 
 // newWebHandler builds the complete handler tree of the web interface.
@@ -90,6 +134,9 @@ func newWebHandler(tlsEnabled bool) http.Handler {
 			noDirListing(
 				http.FileServer(
 					http.Dir(cfg.Www.Resourcedir)))))
+
+	// Health check for monitoring tools: deliberately without authentication.
+	mux.HandleFunc(cfg.Www.Rootdir+"/healthz", healthzHandler)
 
 	mux.HandleFunc(cfg.Www.Rootdir+"/", basicAuth(dashboardHandler))
 	mux.HandleFunc(cfg.Www.Rootdir+"/status/", basicAuth(statusHandler))
@@ -234,6 +281,36 @@ func forwardedClient(proxies []netip.Prefix, peer netip.Addr, h http.Header) str
 		}
 	}
 	return client.String()
+}
+
+// healthzHandler reports the health of the daemon only (no pool states, no
+// error details): 200 when the last zpool status query succeeded and is not
+// older than three refresh intervals, otherwise 503.
+func healthzHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		w.Header().Set("Allow", "GET, HEAD")
+		http.Error(w, "405 Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	zpoolHealth.mutex.Lock()
+	seen, ok, at := zpoolHealth.seen, zpoolHealth.ok, zpoolHealth.at
+	zpoolHealth.mutex.Unlock()
+
+	code, text := http.StatusOK, "ok"
+	switch {
+	case !seen:
+		code, text = http.StatusServiceUnavailable, "starting"
+	case !ok:
+		code, text = http.StatusServiceUnavailable, "error"
+	case time.Since(at) > 3*time.Duration(cfg.Main.Zpoolstatusrefresh)*time.Second:
+		code, text = http.StatusServiceUnavailable, "stale"
+	}
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(code)
+	if r.Method == http.MethodGet {
+		_, _ = w.Write([]byte(text + "\n"))
+	}
 }
 
 // webCSP restricts the pages to their own origin. Inline styles are still

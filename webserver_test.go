@@ -1,12 +1,15 @@
 package main
 
 import (
+	"errors"
 	"html/template"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 )
 
 const (
@@ -171,5 +174,145 @@ func TestDefaultPasswordBanner(t *testing.T) {
 		if got := strings.Contains(b.String(), "alert alert-danger"); got != inUse {
 			t.Errorf("inUse=%v: banner present=%v", inUse, got)
 		}
+	}
+}
+
+func TestWebServerGracefulShutdown(t *testing.T) {
+	setupWebTest(t, false)
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := &http.Server{ReadHeaderTimeout: time.Second, Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})}
+	done := make(chan error, 1)
+	go func() {
+		// mirrors serveWeb: ErrServerClosed must map to nil
+		err := srv.Serve(ln)
+		if errors.Is(err, http.ErrServerClosed) {
+			err = nil
+		}
+		done <- err
+	}()
+	resp, err := http.Get("http://" + ln.Addr().String() + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+
+	if err := shutdownWebServer(srv, 5*time.Second); err != nil {
+		t.Fatalf("shutdown: %v", err)
+	}
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Errorf("serve returned %v, want nil", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("server did not stop")
+	}
+	if resp, err := http.Get("http://" + ln.Addr().String() + "/"); err == nil {
+		_ = resp.Body.Close()
+		t.Error("request after shutdown succeeded")
+	}
+}
+
+func TestServeWebShutdownIsNotAnError(t *testing.T) {
+	setupWebTest(t, false)
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := &http.Server{ReadHeaderTimeout: time.Second, Handler: http.NotFoundHandler()}
+	done := make(chan error, 1)
+	go func() { done <- serveWeb(srv, ln, false) }()
+	resp, err := http.Get("http://" + ln.Addr().String() + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	if err := shutdownWebServer(srv, 5*time.Second); err != nil {
+		t.Fatal(err)
+	}
+	if err := <-done; err != nil {
+		t.Errorf("serveWeb returned %v, want nil", err)
+	}
+}
+
+func setHealth(t *testing.T, seen, ok bool, age time.Duration) {
+	t.Helper()
+	zpoolHealth.mutex.Lock()
+	zpoolHealth.seen, zpoolHealth.ok, zpoolHealth.at = seen, ok, time.Now().Add(-age)
+	zpoolHealth.mutex.Unlock()
+	t.Cleanup(func() {
+		zpoolHealth.mutex.Lock()
+		zpoolHealth.seen, zpoolHealth.ok = false, false
+		zpoolHealth.mutex.Unlock()
+	})
+}
+
+// doReqNoAuth sends a request without credentials.
+func doReqNoAuth(h http.Handler, method, path string) *httptest.ResponseRecorder {
+	r := httptest.NewRequest(method, path, nil)
+	r.Host = "zfs.example"
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	return w
+}
+
+func TestHealthz(t *testing.T) {
+	h := setupWebTest(t, false)
+	cfg.Main.Zpoolstatusrefresh = 10
+	tests := []struct {
+		name     string
+		seen, ok bool
+		age      time.Duration
+		code     int
+		body     string
+	}{
+		{"starting", false, false, 0, 503, "starting\n"},
+		{"ok", true, true, 5 * time.Second, 200, "ok\n"},
+		{"stale", true, true, 31 * time.Second, 503, "stale\n"},
+		{"error", true, false, time.Second, 503, "error\n"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			setHealth(t, tc.seen, tc.ok, tc.age)
+			w := doReqNoAuth(h, "GET", "/zw/healthz")
+			if w.Code != tc.code || w.Body.String() != tc.body {
+				t.Fatalf("got %d %q", w.Code, w.Body.String())
+			}
+			if w.Header().Get("Cache-Control") != "no-store" ||
+				w.Header().Get("X-Content-Type-Options") != "nosniff" {
+				t.Fatalf("headers: %v", w.Header())
+			}
+		})
+	}
+}
+
+func TestHealthzMethods(t *testing.T) {
+	h := setupWebTest(t, false)
+	cfg.Main.Zpoolstatusrefresh = 10
+	setHealth(t, true, true, 0)
+	w := doReqNoAuth(h, "HEAD", "/zw/healthz")
+	if w.Code != http.StatusOK || w.Body.Len() != 0 {
+		t.Fatalf("HEAD: got %d %q", w.Code, w.Body.String())
+	}
+	w = doReqNoAuth(h, "POST", "/zw/healthz")
+	if w.Code != http.StatusMethodNotAllowed || w.Header().Get("Allow") != "GET, HEAD" {
+		t.Fatalf("POST: got %d, Allow=%q", w.Code, w.Header().Get("Allow"))
+	}
+}
+
+func TestHealthzWithoutAuth(t *testing.T) {
+	h := setupWebTest(t, false)
+	cfg.Main.Zpoolstatusrefresh = 10
+	setHealth(t, true, true, 0)
+	if w := doReqNoAuth(h, "GET", "/zw/healthz"); w.Code != http.StatusOK {
+		t.Fatalf("healthz: got %d", w.Code)
+	}
+	if w := doReqNoAuth(h, "GET", "/zw/about/"); w.Code != http.StatusUnauthorized {
+		t.Fatalf("about: got %d", w.Code)
 	}
 }

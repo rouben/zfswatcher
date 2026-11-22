@@ -25,6 +25,8 @@ import (
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/tantefred/zfswatcher/notifier"
 )
 
 const authRealm = "zfswatcher"
@@ -82,6 +84,9 @@ func basicAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username, password, ok := r.BasicAuth()
 		if !ok || !authenticate(username, password) {
+			if ok && notify != nil {
+				notify.Printf(notifier.WARNING, "web login failed for user %q from %s", username, clientIP(r))
+			}
 			w.Header().Set("WWW-Authenticate", `Basic realm="`+authRealm+`", charset="UTF-8"`)
 			http.Error(w, "401 Unauthorized", http.StatusUnauthorized)
 			return

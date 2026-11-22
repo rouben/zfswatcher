@@ -17,6 +17,12 @@ zfswatcher (0.6.0-1) UNRELEASED; urgency=medium
     without echo and prints a bcrypt hash. MD5 crypt hashes still work but
     log a deprecation warning at startup. Replace the unmaintained
     github.com/abbot/go-http-auth with a built-in Basic authentication.
+  * Add a man page for zfswatcher-ledctl.
+  * Remove the dead html5shim script (loaded over http) from the page header.
+  * Drop the recursive chown of /var/log/zfswatcher from postinst; systemd
+    LogsDirectory= sets the ownership when the service starts.
+  * Add lintian overrides for the intentional static binary and the bundled
+    web assets.
 
  -- tantefred <147740857+tantefred@users.noreply.github.com>  Sun, 22 Nov 2026 12:00:00 +0100
 

@@ -5,6 +5,19 @@
 
 version 0.7.0 (unreleased)
 
+New features
+
+ - The web interface has a health check at "<rootdir>/healthz" for monitoring
+   tools such as Uptime Kuma. It needs no login and reveals nothing about
+   pools: 200 "ok" if the last "zpool status" query worked and is not older
+   than three times "zpoolstatusrefresh", otherwise 503 with "starting",
+   "stale" or "error".
+
+Fixes
+
+ - The web server now shuts down gracefully on SIGTERM/SIGINT: running
+   requests get up to 5 seconds to finish and no new ones are accepted.
+
 Cleanup
 
  - Removed etc/gccgo-build.sh, which built from the bundled golibs/ tree.

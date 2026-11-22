@@ -22,7 +22,9 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 %define		user %{name}
 %define		group %{name}
 
-BuildRequires:	golang >= 1.26
+# Go >= 1.26 is required (see go.mod), but not checked as an RPM dependency:
+# the toolchain often does not come from the package system.
+#BuildRequires:	golang >= 1.26
 #BuildRequires:		systemd
 Requires:		zfs
 Requires(pre):		/usr/sbin/useradd, /usr/sbin/groupadd, /usr/bin/getent

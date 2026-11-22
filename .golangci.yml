@@ -19,6 +19,18 @@ linters:
         # G204: zpool, zfs, ledctl and the notification commands are run on
         # purpose; their paths come from the admin-owned configuration.
         - G204
+  exclusions:
+    rules:
+      # Tests read their fixtures from paths they build themselves.
+      - path: _test\.go
+        linters:
+          - gosec
+        text: "G304"
+      # md5crypt only verifies legacy "$1$" hashes of existing configurations.
+      - path: md5crypt\.go
+        linters:
+          - gosec
+        text: "G401"
 
 formatters:
   enable:

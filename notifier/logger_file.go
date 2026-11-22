@@ -27,12 +27,15 @@ import (
 	"strings"
 )
 
+// logFileMode is used when a log file is created (before the umask).
+const logFileMode = 0o640
+
 func (n *Notifier) loggerFile(ch chan *Msg, filename string) {
 	defer n.wg.Done()
 
 	var fileopen bool
 
-	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, logFileMode) //nolint:gosec // path from admin config
 
 	if err == nil {
 		fileopen = true
@@ -62,7 +65,7 @@ func (n *Notifier) loggerFile(ch chan *Msg, filename string) {
 				err = f.Close()
 				checkInternalError("error closing log file", err)
 			}
-			f, err = os.OpenFile(filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+			f, err = os.OpenFile(filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, logFileMode) //nolint:gosec // path from admin config
 			if err == nil {
 				fileopen = true
 			} else {

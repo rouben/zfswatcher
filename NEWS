@@ -3,7 +3,18 @@
                            version history
 
 
-version 0.6.0 UNRELEASED
+version 0.6.0 (unreleased)
+
+ - Web interface hardening: the HTTP server has timeouts and a header size
+   limit, all responses carry security headers (Content-Security-Policy,
+   X-Frame-Options, X-Content-Type-Options, Referrer-Policy, and HSTS with
+   TLS). Switching an LED on or off ("locate") now requires POST, rejects
+   cross-origin requests (CSRF), accepts only known devices and no longer
+   redirects to the Referer header.
+
+ - zfswatcher logs a warning at startup and the web pages show a red notice
+   if an enabled web user still has the example password "toor". Create a
+   new hash with "zfswatcher -P".
 
  - E-mail notifications use the standard library net/smtp instead of the
    unmaintained github.com/snabb/smtp. STARTTLS is used when the server

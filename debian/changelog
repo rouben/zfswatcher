@@ -1,5 +1,11 @@
 zfswatcher (0.6.0-1) UNRELEASED; urgency=medium
 
+  * Harden the web interface: server timeouts and header size limit,
+    security headers (CSP, X-Frame-Options, nosniff, Referrer-Policy, HSTS
+    with TLS), locate only via POST with CSRF check, device validation and
+    internal redirects only.
+  * Warn at startup and on the web pages if a web user still has the
+    example password "toor".
   * Use net/smtp from the standard library instead of the unmaintained
     github.com/snabb/smtp (no license). Add a 30 second timeout, Message-ID,
     MIME and UTF-8 subject headers, and reject line breaks in headers.

@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"regexp"
 	"sort"
 	"strings"
@@ -69,6 +70,12 @@ type webNav struct {
 	Root       string
 }
 
+// DefaultPasswordWarning tells the header template whether to show the
+// warning about the example password.
+func (webNav) DefaultPasswordWarning() bool {
+	return defaultPasswordInUse.Load()
+}
+
 type webSubNav struct {
 	Name   string
 	Active bool
@@ -92,6 +99,7 @@ type devStatusWeb struct {
 	Cksum      int64
 	Rest       string
 	Root       string
+	Return     string
 }
 
 type poolStatusWeb struct {
@@ -153,6 +161,7 @@ type enclosureWeb struct {
 	Chassis45drives60  bool
 	Drives1            []*devChassisStatusWeb
 	Drives2            []*devChassisStatusWeb
+	EnclosureData      map[string][]*devChassisStatusWeb
 }
 
 var (
@@ -229,6 +238,7 @@ func makePoolStatusWeb(pool *PoolType, usage map[string]*PoolUsageType) *poolSta
 			Cksum:      dev.cksum,
 			Rest:       dev.rest,
 			Root:       cfg.Www.Rootdir,
+			Return:     cfg.Www.Rootdir + "/status/" + url.PathEscape(pool.name),
 		}
 		devw.Indent = 1
 		for d := n; pool.devs[d].parentDev != -1; d = pool.devs[d].parentDev {
@@ -431,10 +441,15 @@ func aboutHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 }
 
 func locateHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
-	dev := r.FormValue("dev") // XXX validate, remove slashes etc
-	state := r.FormValue("state")
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	dev := r.PostFormValue("dev")
+	state := r.PostFormValue("state")
 
-	if _, err := locateQuery(dev); err != nil {
+	if !locateKnown(dev) {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
@@ -447,7 +462,25 @@ func locateHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
-	http.Redirect(w, &r.Request, r.Referer(), http.StatusSeeOther)
+	http.Redirect(w, &r.Request, locateRedirectTarget(r.PostFormValue("return")), http.StatusSeeOther)
+}
+
+// locateRedirectTarget returns the page to go back to after a locate
+// request. Only paths below the web root are accepted, anything else
+// (other hosts, schemes, protocol-relative URLs) falls back to the
+// enclosure page.
+func locateRedirectTarget(ret string) string {
+	def := cfg.Www.Rootdir + "/enclosure/"
+	if !strings.HasPrefix(ret, cfg.Www.Rootdir+"/") ||
+		strings.Contains(ret, "//") || strings.Contains(ret, "\\") ||
+		strings.ContainsAny(ret, "\r\n") {
+		return def
+	}
+	u, err := url.Parse(ret)
+	if err != nil || u.Scheme != "" || u.Host != "" {
+		return def
+	}
+	return ret
 }
 
 func enclosureHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
@@ -512,6 +545,7 @@ func enclosureHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 		Chassis45drives60:  cfg.Chassis.Chassis45drives60,
 		Drives1:            wsx,
 		Drives2:            wsz,
+		EnclosureData:      map[string][]*devChassisStatusWeb{"drives1": wsx, "drives2": wsz},
 	}
 
 	err := templates.ExecuteTemplate(w, "enclosure.html", &webData{Nav: wn, Data: ewd})

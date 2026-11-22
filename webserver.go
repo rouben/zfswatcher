@@ -26,11 +26,16 @@ import (
 	"html/template"
 	"math/rand"
 	"net/http"
+	"sort"
 	"strings"
+	"sync/atomic"
+	"time"
 
 	auth "github.com/abbot/go-http-auth"
 	"github.com/tantefred/zfswatcher/notifier"
 )
+
+var defaultPasswordInUse atomic.Bool
 
 func getUserSecret(username, realm string) string {
 	if username == "" {
@@ -67,30 +72,109 @@ func webServer() {
 		notify.Printf(notifier.ERR, "error parsing templates: %s", err)
 	}
 
+	warnDefaultPassword()
+
 	authenticator := auth.NewBasicAuthenticator("zfswatcher", getUserSecret)
 
-	http.Handle(cfg.Www.Rootdir+"/resources/",
+	tlsEnabled := cfg.Www.Certfile != "" && cfg.Www.Keyfile != ""
+	srv := &http.Server{
+		Addr:              cfg.Www.Bind,
+		Handler:           newWebHandler(authenticator, tlsEnabled),
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      60 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		MaxHeaderBytes:    64 << 10,
+	}
+	if tlsEnabled {
+		err = srv.ListenAndServeTLS(cfg.Www.Certfile, cfg.Www.Keyfile)
+	} else {
+		err = srv.ListenAndServe()
+	}
+	if err != nil {
+		notify.Printf(notifier.ERR, "error starting web server: %s", err)
+	}
+}
+
+// newWebHandler builds the complete handler tree of the web interface.
+func newWebHandler(authenticator *auth.BasicAuth, tlsEnabled bool) http.Handler {
+	mux := http.NewServeMux()
+
+	mux.Handle(cfg.Www.Rootdir+"/resources/",
 		http.StripPrefix(cfg.Www.Rootdir+"/resources",
 			noDirListing(
 				http.FileServer(
 					http.Dir(cfg.Www.Resourcedir)))))
 
-	http.HandleFunc(cfg.Www.Rootdir+"/", authenticator.Wrap(dashboardHandler))
-	http.HandleFunc(cfg.Www.Rootdir+"/status/", authenticator.Wrap(statusHandler))
-	http.HandleFunc(cfg.Www.Rootdir+"/usage/", authenticator.Wrap(usageHandler))
-	http.HandleFunc(cfg.Www.Rootdir+"/statistics/", authenticator.Wrap(statisticsHandler))
-	http.HandleFunc(cfg.Www.Rootdir+"/logs/", authenticator.Wrap(logsHandler))
-	http.HandleFunc(cfg.Www.Rootdir+"/about/", authenticator.Wrap(aboutHandler))
-	http.HandleFunc(cfg.Www.Rootdir+"/locate/", authenticator.Wrap(locateHandler))
-	http.HandleFunc(cfg.Www.Rootdir+"/enclosure/", authenticator.Wrap(enclosureHandler))
+	mux.HandleFunc(cfg.Www.Rootdir+"/", authenticator.Wrap(dashboardHandler))
+	mux.HandleFunc(cfg.Www.Rootdir+"/status/", authenticator.Wrap(statusHandler))
+	mux.HandleFunc(cfg.Www.Rootdir+"/usage/", authenticator.Wrap(usageHandler))
+	mux.HandleFunc(cfg.Www.Rootdir+"/statistics/", authenticator.Wrap(statisticsHandler))
+	mux.HandleFunc(cfg.Www.Rootdir+"/logs/", authenticator.Wrap(logsHandler))
+	mux.HandleFunc(cfg.Www.Rootdir+"/about/", authenticator.Wrap(aboutHandler))
+	mux.HandleFunc(cfg.Www.Rootdir+"/locate/", authenticator.Wrap(locateHandler))
+	mux.HandleFunc(cfg.Www.Rootdir+"/enclosure/", authenticator.Wrap(enclosureHandler))
 
-	if cfg.Www.Certfile != "" && cfg.Www.Keyfile != "" {
-		err = http.ListenAndServeTLS(cfg.Www.Bind, cfg.Www.Certfile, cfg.Www.Keyfile, nil)
-	} else {
-		err = http.ListenAndServe(cfg.Www.Bind, nil)
+	// Reject cross-origin state changing requests (CSRF) for all paths.
+	return securityHeaders(http.NewCrossOriginProtection().Handler(mux), tlsEnabled)
+}
+
+// webCSP restricts the pages to their own origin. Inline styles are still
+// needed because the Bootstrap templates use style attributes.
+const webCSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
+	"img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+
+// securityHeaders adds defensive response headers to every response.
+func securityHeaders(h http.Handler, tlsEnabled bool) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hdr := w.Header()
+		hdr.Set("X-Content-Type-Options", "nosniff")
+		hdr.Set("X-Frame-Options", "DENY")
+		hdr.Set("Referrer-Policy", "same-origin")
+		hdr.Set("Content-Security-Policy", webCSP)
+		if tlsEnabled {
+			hdr.Set("Strict-Transport-Security", "max-age=31536000")
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
+// isDefaultPassword reports whether the MD5 crypt hash is the one of the
+// well known example password.
+func isDefaultPassword(hash string) bool {
+	return checkMD5CryptHash(hash, "toor")
+}
+
+func checkMD5CryptHash(hash, password string) bool {
+	parts := strings.Split(hash, "$")
+	if len(parts) != 4 || parts[0] != "" || parts[1] != "1" {
+		return false
 	}
-	if err != nil {
-		notify.Printf(notifier.ERR, "error starting web server: %s", err)
+	got := auth.MD5Crypt([]byte(password), []byte(parts[2]), []byte("$1$"))
+	return string(got) == hash
+}
+
+// enabledDefaultPasswordUsers returns the enabled web users which still use
+// the example password.
+func enabledDefaultPasswordUsers() []string {
+	var users []string
+	for name, u := range cfg.Wwwuser {
+		if u.Enable && isDefaultPassword(u.Password) {
+			users = append(users, name)
+		}
+	}
+	sort.Strings(users)
+	return users
+}
+
+// warnDefaultPassword logs a warning for every web user with the example
+// password and remembers the fact for the pages.
+func warnDefaultPassword() {
+	users := enabledDefaultPasswordUsers()
+	defaultPasswordInUse.Store(len(users) > 0)
+	for _, name := range users {
+		notify.Printf(notifier.WARNING,
+			"web user %q uses the well-known example password; change it (zfswatcher -P)", name)
 	}
 }
 

@@ -96,6 +96,60 @@ func TestParseZfsListInvalidLine(t *testing.T) {
 	}
 }
 
+func TestParseZfsListLegacy9Columns(t *testing.T) {
+	legacyZfsListWarned.Store(false)
+	in := "zfswt_a\t9.68M\t150M\t0\t150M\t0\t0\t150M\t/zfswt_a\n" +
+		"zfswt_b\t1.5G\t2G\t0\t2G\t0\t0\t2G\t-\n"
+	usage := parseZfsList(in)
+	if len(usage) != 2 {
+		t.Fatalf("got %d entries, want 2: %v", len(usage), usage)
+	}
+	u := usage["zfswt_a"]
+	if u == nil {
+		t.Fatal("zfswt_a missing")
+	}
+	if u.Avail != unniceNumber("9.68M") || u.Used != unniceNumber("150M") ||
+		u.Usedds != unniceNumber("150M") || u.Refer != unniceNumber("150M") ||
+		u.Mountpoint != "/zfswt_a" {
+		t.Errorf("unexpected fields: %+v", u)
+	}
+	if u.Logicalused != -1 || u.Compressratio != "-" {
+		t.Errorf("logicalused/compressratio = %d/%q, want -1/\"-\"", u.Logicalused, u.Compressratio)
+	}
+	if got := niceNumber(u.Logicalused); got != "-" {
+		t.Errorf("niceNumber(unknown) = %q, want \"-\"", got)
+	}
+	if !legacyZfsListWarned.Load() {
+		t.Error("legacy warning flag not set")
+	}
+	// A second parse must not trigger the warning again.
+	if legacyZfsListWarned.CompareAndSwap(false, true) {
+		t.Error("warning would be logged again")
+	}
+}
+
+func TestParseZfsList11Columns(t *testing.T) {
+	legacyZfsListWarned.Store(false)
+	in := "zfswt_a\t9.68M\t150M\t160M\t0\t150M\t0\t0\t150M\t/zfswt_a\t1.07x\n"
+	u := parseZfsList(in)["zfswt_a"]
+	if u == nil {
+		t.Fatal("zfswt_a missing")
+	}
+	if u.Logicalused != unniceNumber("160M") || u.Compressratio != "1.07x" {
+		t.Errorf("unexpected fields: %+v", u)
+	}
+	if legacyZfsListWarned.Load() {
+		t.Error("legacy warning set for 11 column input")
+	}
+}
+
+func TestParseZfsListInvalid10Columns(t *testing.T) {
+	in := "zfswt_a\t9.68M\t150M\t160M\t0\t150M\t0\t0\t150M\t/zfswt_a\n"
+	if usage := parseZfsList(in); len(usage) != 0 {
+		t.Errorf("expected 10 column line to be skipped, got %v", usage)
+	}
+}
+
 func TestParseZpoolStatusDegraded(t *testing.T) {
 	pools, err := parseZpoolStatus(readFixture(t, "zpool-status-degraded.txt"))
 	if err != nil {

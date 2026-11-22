@@ -1,5 +1,9 @@
 zfswatcher (0.6.0-1) UNRELEASED; urgency=medium
 
+  * Accept the legacy 9 column zfslistcmd/zfslistusagecmd of 0.4.x
+    configurations again (usage data and used space warnings were missing
+    since 0.5.0); log a one-time warning recommending to update the
+    commands.
   * Harden the web interface: server timeouts and header size limit,
     security headers (CSP, X-Frame-Options, nosniff, Referrer-Policy, HSTS
     with TLS), locate only via POST with CSRF check, device validation and

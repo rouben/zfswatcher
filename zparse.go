@@ -26,6 +26,7 @@ import (
 	"io"
 	"runtime"
 	"strings"
+	"sync/atomic"
 
 	"github.com/tantefred/zfswatcher/notifier"
 )
@@ -55,7 +56,20 @@ func (u *PoolUsageType) GetAvailPercent() int {
 	return int(float64(u.Avail)*100/float64(u.Avail+u.Used) + 0.5)
 }
 
+// legacyZfsListWarned makes sure the warning about the 9 column format of
+// zfslistcmd/zfslistusagecmd is logged only once per process run.
+var legacyZfsListWarned atomic.Bool
+
+const legacyZfsListWarning = "zfslistcmd/zfslistusagecmd use the legacy 9 column format " +
+	"without logicalused and compressratio; the dashboard shows \"-\" for these. " +
+	"Please update the commands to \"-o name,avail,used,logicalused,usedsnap,usedds," +
+	"usedrefreserv,usedchild,refer,mountpoint,compressratio\" " +
+	"(see the example configuration, e.g. /etc/zfs/zfswatcher.conf.dpkg-dist)"
+
 // Parse "zfs list -H -o name,avail,used,logicalused,usedsnap,usedds,usedrefreserv,usedchild,refer,mountpoint,compressratio" command output.
+// The legacy format without logicalused and compressratio (9 columns, as
+// used up to zfswatcher 0.4.x) is accepted too; the missing values are
+// reported as -1 (Logicalused) and "-" (Compressratio).
 func parseZfsList(str string) map[string]*PoolUsageType {
 	usagemap := make(map[string]*PoolUsageType)
 	for lineno, line := range strings.Split(str, "\n") {
@@ -63,7 +77,15 @@ func parseZfsList(str string) map[string]*PoolUsageType {
 			continue
 		}
 		f := strings.Split(line, "\t")
-		if len(f) != 11 {
+		switch len(f) {
+		case 9:
+			if legacyZfsListWarned.CompareAndSwap(false, true) {
+				notify.Print(notifier.WARNING, legacyZfsListWarning)
+			}
+			// name,avail,used,usedsnap,usedds,usedrefreserv,usedchild,refer,mountpoint
+			f = []string{f[0], f[1], f[2], "-", f[3], f[4], f[5], f[6], f[7], f[8], "-"}
+		case 11:
+		default:
 			notify.Printf(notifier.CRIT, "invalid line %d in ZFS usage output: %s",
 				lineno+1, line)
 			_ = notify.Attach(notifier.CRIT, str) // only fails for an invalid severity

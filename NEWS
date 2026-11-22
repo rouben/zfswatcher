@@ -5,6 +5,12 @@
 
 version 0.6.0 (unreleased)
 
+ - Configurations from 0.4.x with the 9 column zfslistcmd/zfslistusagecmd
+   (without logicalused and compressratio) work again; since 0.5.0 all
+   usage data and the used space warnings were missing for them. The
+   dashboard shows "-" for the unknown columns and zfswatcher logs a warning
+   once, recommending to update the commands to the example configuration.
+
  - The FreeBSD and Solaris builds are now vetted in CI; FreeBSD without cgo
    compiles with stubs (the real FreeBSD binary still needs cgo).
    

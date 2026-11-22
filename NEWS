@@ -3,6 +3,16 @@
                            version history
 
 
+version 0.7.0 (unreleased)
+
+Fixes
+
+ - A pool whose configuration cannot be determined is now shown without
+   devices instead of with a bogus device named "The".
+ - The iostat stream reader no longer loses entries that arrive together
+   in a single read.
+
+
 version 0.6.0 released 2026-11-22
 
 Upgrade notes

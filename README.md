@@ -30,7 +30,7 @@ Download the `.deb` package from the
 it with `dpkg`, for example:
 
 ```sh
-dpkg -i zfswatcher_0.5.0-1_amd64.deb
+dpkg -i zfswatcher_0.6.0-1_amd64.deb
 ```
 
 The service is started by default according to the Debian and Ubuntu
@@ -53,7 +53,7 @@ Download the `.rpm` package from the
 it with `yum`, for example:
 
 ```sh
-yum install zfswatcher-0.5.0-1.x86_64.rpm
+yum install zfswatcher-0.6.0-1.x86_64.rpm
 ```
 
 The service is **not** started by default according to Red Hat

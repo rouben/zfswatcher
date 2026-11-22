@@ -3,26 +3,27 @@
                            version history
 
 
-version 0.6.0 (unreleased)
+version 0.6.0 released 2026-11-22
 
- - Configurations from 0.4.x with the 9 column zfslistcmd/zfslistusagecmd
-   (without logicalused and compressratio) work again; since 0.5.0 all
-   usage data and the used space warnings were missing for them. The
-   dashboard shows "-" for the unknown columns and zfswatcher logs a warning
-   once, recommending to update the commands to the example configuration.
+Upgrade notes
 
- - The FreeBSD and Solaris builds are now vetted in CI; FreeBSD without cgo
-   compiles with stubs (the real FreeBSD binary still needs cgo).
-   
- - Web passwords are now stored as bcrypt hashes ("$2y$..."). "zfswatcher -P"
-   reads the password without echo (twice on a terminal, one line from
-   stdin otherwise) and prints a bcrypt hash; the example configuration uses
-   a bcrypt hash of "toor". Existing MD5 crypt hashes ("$1$...") keep
-   working, but zfswatcher logs a warning at startup for each such user;
-   create a new hash with "zfswatcher -P". The unmaintained
-   github.com/abbot/go-http-auth is no longer used: HTTP Basic
-   authentication is built in, and unknown or disabled users take as much
-   time to reject as wrong passwords.
+ - Web passwords: MD5 crypt hashes ("$1$...") keep working but are
+   deprecated and logged at startup; create a bcrypt hash with
+   "zfswatcher -P" and put it into your configuration. If a web user still
+   has the example password "toor", zfswatcher warns at startup and the web
+   pages show a red notice.
+ - "zpoolstatusrefresh" and "zfslistrefresh" must be between 1 and 86400
+   seconds; other values are now rejected as configuration errors.
+ - Configurations from 0.4.x with the old 9 column zfslistcmd and
+   zfslistusagecmd work again, but updating them to the commands of the
+   example configuration is recommended (zfswatcher logs a warning).
+ - Switching LEDs on or off ("locate") in the web interface needs POST and
+   rejects cross-origin requests; a script calling it with GET must be
+   changed. State changing requests are checked against the Origin header,
+   so a reverse proxy has to pass the Host header (and Origin) unchanged.
+ - New log files are created with mode 0640; existing files keep their mode.
+
+Security
 
  - Web interface hardening: the HTTP server has timeouts and a header size
    limit, all responses carry security headers (Content-Security-Policy,
@@ -31,34 +32,53 @@ version 0.6.0 (unreleased)
    cross-origin requests (CSRF), accepts only known devices and no longer
    redirects to the Referer header.
 
+ - Web passwords are now stored as bcrypt hashes ("$2a$..."). "zfswatcher -P"
+   reads the password without echo (twice on a terminal, one line from
+   stdin otherwise) and prints a bcrypt hash; the example configuration uses
+   a bcrypt hash of "toor". The unmaintained github.com/abbot/go-http-auth
+   is no longer used: HTTP Basic authentication is built in, and unknown or
+   disabled users take as much time to reject as wrong passwords.
+
  - zfswatcher logs a warning at startup and the web pages show a red notice
-   if an enabled web user still has the example password "toor". Create a
-   new hash with "zfswatcher -P".
+   if an enabled web user still has the example password "toor".
+
+ - Bundled web assets updated: Bootstrap 3.3.7 -> 3.4.1 (fixes several XSS
+   issues, CVE-2018-14040, CVE-2018-14042, CVE-2019-8331) and jQuery
+   3.2.1 -> 3.7.1. The bundled Bootstrap license file is now the MIT
+   license text. The dead html5shim script (loaded over http, for IE 8 and
+   older) is removed from the web pages.
 
  - E-mail notifications use the standard library net/smtp instead of the
    unmaintained github.com/snabb/smtp. STARTTLS is used when the server
    offers it, connections time out after 30 seconds, and the messages now
    carry Message-ID, MIME-Version and UTF-8 headers (non-ASCII subjects are
    encoded). The configuration is unchanged.
-   
- - Bundled web assets updated: Bootstrap 3.3.7 -> 3.4.1 (fixes several XSS
-   issues, CVE-2018-14040, CVE-2018-14042, CVE-2019-8331) and jQuery
-   3.2.1 -> 3.7.1. The bundled Bootstrap license file is now the
-   MIT license text.
 
- - New man page zfswatcher-ledctl(8). The dead html5shim script (loaded
-   over http, for IE 8 and older) is removed from the web pages. The Debian
-   postinst no longer runs "chown -R" on /var/log/zfswatcher; systemd sets
-   the ownership via LogsDirectory= when the service starts.
+ - New log files are created with mode 0640 instead of 0666.
+
+Fixes
+
+ - Configurations from 0.4.x with the 9 column zfslistcmd/zfslistusagecmd
+   (without logicalused and compressratio) work again; since 0.5.0 all
+   usage data and the used space warnings were missing for them. The
+   dashboard shows "-" for the unknown columns and zfswatcher logs a warning
+   once, recommending to update the commands to the example configuration.
 
  - Errors are no longer ignored silently. A pid file which cannot be written
    (for example an old "pidfile = /var/run/zfswatcher.pid" while running as
    the user zfswatcher) is now logged as an error; the daemon keeps running.
-   New log files are created with mode 0640 instead of 0666 (existing files
-   keep their mode). "zpoolstatusrefresh" and "zfslistrefresh" must be
-   between 1 and 86400 seconds; other values are rejected as configuration
-   errors. A failing "locate" request in the web interface is logged and
-   answered with an error.
+   A failing "locate" request in the web interface is logged and answered
+   with an error. "zpoolstatusrefresh" and "zfslistrefresh" must be between
+   1 and 86400 seconds; other values are rejected as configuration errors.
+
+Packaging and CI
+
+ - New man page zfswatcher-ledctl(8). The Debian postinst no longer runs
+   "chown -R" on /var/log/zfswatcher; systemd sets the ownership via
+   LogsDirectory= when the service starts.
+
+ - The FreeBSD and Solaris builds are now vetted in CI; FreeBSD without cgo
+   compiles with stubs (the real FreeBSD binary still needs cgo).
 
 version 0.5.0 released 2026-11-21
 

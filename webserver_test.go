@@ -7,11 +7,12 @@ import (
 	"net/url"
 	"strings"
 	"testing"
-
-	auth "github.com/abbot/go-http-auth"
 )
 
-const testToorHash = "$1$fNF5/E3q$TEYvY1AQae/7rzHQ5fVgD1"
+const (
+	testToorHash       = "$1$fNF5/E3q$TEYvY1AQae/7rzHQ5fVgD1"
+	testToorBcryptHash = "$2y$05$k43gKQyMPSXtKfJTayqCXuNNuPBMoSIoKt59Qf1c5hPgkJC68WoWC"
+)
 
 func setupWebTest(t *testing.T, tls bool) http.Handler {
 	t.Helper()
@@ -32,7 +33,7 @@ func setupWebTest(t *testing.T, tls bool) http.Handler {
 		devLeds = nil
 		devLedsMutex.Unlock()
 	})
-	return newWebHandler(auth.NewBasicAuthenticator("zfswatcher", getUserSecret), tls)
+	return newWebHandler(tls)
 }
 
 func doReq(h http.Handler, method, path string, form url.Values, hdr map[string]string) *httptest.ResponseRecorder {
@@ -136,7 +137,11 @@ func TestDefaultPasswordDetection(t *testing.T) {
 	if !isDefaultPassword(testToorHash) {
 		t.Error("toor hash not detected")
 	}
-	for _, h := range []string{"", "toor", "$1$dlPL2MqE$oQmn16q49SqdmhenQuNgs1", "$1$fNF5/E3q$bad", "$5$x$y"} {
+	if !isDefaultPassword(testToorBcryptHash) {
+		t.Error("bcrypt toor hash not detected")
+	}
+	for _, h := range []string{"", "toor", "$1$dlPL2MqE$oQmn16q49SqdmhenQuNgs1", "$1$fNF5/E3q$bad", "$5$x$y",
+		"$2y$05$qEpySWOaHbtq76BTs9NEj.92DGdwHrqQuNRFMd7GX6SY/hGLRLxnK", "$2y$05$broken"} {
 		if isDefaultPassword(h) {
 			t.Errorf("%q wrongly detected", h)
 		}

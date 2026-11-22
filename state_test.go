@@ -208,7 +208,7 @@ func TestPersisterErrorLoggedOncePerFailure(t *testing.T) {
 	p.update(pools, nil)
 	p.update(pools, nil)
 	p.update(pools, nil)
-	if err := os.Mkdir(filepath.Join(dir, "sub"), 0o755); err != nil {
+	if err := os.Mkdir(filepath.Join(dir, "sub"), 0o750); err != nil {
 		t.Fatal(err)
 	}
 	p.update(pools, nil) // recovers

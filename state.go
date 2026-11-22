@@ -130,7 +130,7 @@ func (sf *stateFile) sameAs(other *stateFile) bool {
 // loadStateFile reads a state file. A missing file is reported with an error
 // for which errors.Is(err, fs.ErrNotExist) holds.
 func loadStateFile(path string) (*stateFile, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) //nolint:gosec // path comes from the configuration
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +179,7 @@ func writeStateFile(path string, sf *stateFile) (err error) {
 		return err
 	}
 	// Make the rename durable; not all platforms can sync a directory.
-	if d, derr := os.Open(dir); derr == nil {
+	if d, derr := os.Open(dir); derr == nil { //nolint:gosec // directory of the configured file
 		_ = d.Sync()
 		_ = d.Close()
 	}

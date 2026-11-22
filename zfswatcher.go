@@ -24,7 +24,7 @@ zfswatcher - ZFS pool monitoring and notification daemon
 
 Please see the web site for more information:
 
-http://zfswatcher.damicon.fi/
+https://github.com/tantefred/zfswatcher
 */
 package main
 

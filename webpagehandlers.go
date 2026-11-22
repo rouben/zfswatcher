@@ -431,7 +431,7 @@ func aboutHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
 	err := templates.ExecuteTemplate(w, "about.html",
 		&webData{Nav: wn,
 			Data: map[string]string{
-				"Version":       VERSION,
+				"Version":       buildVersion,
 				"GoEnvironment": getGoEnvironment(),
 			}})
 	if err != nil {

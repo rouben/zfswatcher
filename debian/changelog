@@ -6,6 +6,13 @@ zfswatcher (0.6.0-1) UNRELEASED; urgency=medium
     internal redirects only.
   * Warn at startup and on the web pages if a web user still has the
     example password "toor".
+  * Use net/smtp from the standard library instead of the unmaintained
+    github.com/snabb/smtp (no license). Add a 30 second timeout, Message-ID,
+    MIME and UTF-8 subject headers, and reject line breaks in headers.
+  * Update the bundled web assets: Bootstrap 3.3.7 to 3.4.1 (fixes several
+    XSS issues) and jQuery 3.2.1 to 3.7.1.
+  * Correct debian/copyright for the bundled files (Bootstrap and jQuery
+    are MIT licensed).
 
  -- tantefred <147740857+tantefred@users.noreply.github.com>  Sun, 22 Nov 2026 12:00:00 +0100
 

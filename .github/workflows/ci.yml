@@ -63,6 +63,15 @@ jobs:
       - name: go vet (Solaris)
         run: GOOS=solaris GOARCH=amd64 go vet ./...
 
+      # The release workflow builds with the default PKGVERSION taken from
+      # version.go; make sure that path works and reports the right version.
+      - name: make with the release version
+        run: |
+          want=$(sed -n 's/^const VERSION = "\(.*\)"$/\1/p' version.go)
+          make zfswatcher
+          ./zfswatcher -v | tee /dev/stderr | grep -F "zfswatcher $want "
+          rm -f zfswatcher
+
       - name: go test
         run: go test -race -covermode=atomic -coverprofile=coverage.out ./...
 

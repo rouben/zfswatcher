@@ -110,6 +110,7 @@ type cfgType struct {
 		Templatedir          string
 		Resourcedir          string
 		Rootdir              string
+		Trustedproxies       string
 		Severitycssclassmap  severityToWwwClassMap
 		Poolstatecssclassmap stringToStringMap
 		Devstatecssclassmap  stringToStringMap
@@ -313,6 +314,8 @@ func getCfg() *cfgType {
 	checkCfgErr(cfgFile, "", "", "", err, &errorSeen)
 	checkCfgErr(cfgFile, "main", "", "zpoolstatusrefresh", checkRefresh(c.Main.Zpoolstatusrefresh), &errorSeen)
 	checkCfgErr(cfgFile, "main", "", "zfslistrefresh", checkRefresh(c.Main.Zfslistrefresh), &errorSeen)
+	_, err = parseTrustedProxies(c.Www.Trustedproxies)
+	checkCfgErr(cfgFile, "www", "", "trustedproxies", err, &errorSeen)
 	checkCfgErr(cfgFile, "main", "", "commandtimeout", checkCommandTimeout(c.Main.Commandtimeout), &errorSeen)
 
 	if errorSeen {

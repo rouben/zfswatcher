@@ -164,18 +164,9 @@ Some notes:
 
 - The embedded web server is disabled by default. When enabled it listens on
   `127.0.0.1:8081` (`bind` in the `[www]` section), meant for a reverse proxy
-  on the same host. Use `bind = :8081` to listen on all interfaces. Example
-  for nginx under the path `/zfswatcher/` (not tested with every setup):
-
-  ```
-  location /zfswatcher/ {
-      proxy_pass http://127.0.0.1:8081;
-  }
-  ```
-
-  together with `rootdir = "/zfswatcher"` in the `[www]` section of
-  `zfswatcher.conf`. The proxy passes the login of the built-in HTTP
-  authentication on; put TLS on the proxy.
+  on the same host. Use `bind = :8081` to listen on all interfaces. Put TLS
+  on the proxy; the proxy passes the login of the built-in HTTP
+  authentication on. See "Reverse proxy" below.
 
 - Health check: `GET <rootdir>/healthz` (for example `/healthz`, or
   `/zfswatcher/healthz` with the nginx example above) needs no login, so
@@ -192,6 +183,65 @@ Some notes:
   This way your local changes will not be overwritten if you upgrade the
   package at a later time.
 
+
+## Reverse proxy
+
+Run zfswatcher with `bind = 127.0.0.1:8081` and let a proxy on the same host
+terminate TLS. Three settings matter:
+
+- `proxy_set_header Host $http_host;` (nginx) or the default of Caddy: the proxy
+  **must** pass the original `Host` header on. The CSRF protection of the web
+  interface compares the `Origin` header of POST requests with `Host`; with a
+  wrong `Host` (for example `127.0.0.1:8081`) every "locate" request is
+  rejected with 403. Use `$http_host`, not `$host`: `$host` drops the port,
+  so behind a non-standard port (`https://zfs.example:8443`) the `Origin`
+  and `Host` no longer match and POST requests fail with 403. The protection
+  is not relaxed by the proxy settings.
+- `trustedproxies` in the `[www]` section: space separated IP addresses or
+  CIDR networks of the proxies, here `127.0.0.1 ::1` (IPv4 and IPv6 are
+  listed separately, `::/0` does not cover IPv4). Only for connections
+  from these addresses zfswatcher evaluates `X-Forwarded-For` (from right to
+  left, the first address which is not a trusted proxy is the client),
+  and `X-Forwarded-Proto` (`X-Real-IP` is not used). The
+  default is empty: the headers are ignored, because any client could forge
+  them. The client address appears in the log message for failed web logins;
+  a trusted `X-Forwarded-Proto: https` also enables the HSTS header.
+- `rootdir` in the `[www]` section must match the path of the proxy
+  `location` if zfswatcher is not served from `/` (the proxy does not strip
+  the prefix).
+
+nginx, zfswatcher under `/zfswatcher/` (`rootdir = "/zfswatcher"`):
+
+```
+location /zfswatcher/ {
+    proxy_pass http://127.0.0.1:8081;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+Caddy, same path:
+
+```
+zfs.example.com {
+    handle /zfswatcher/* {
+        reverse_proxy 127.0.0.1:8081
+    }
+}
+```
+
+`reverse_proxy` sends the original `Host` and sets `X-Forwarded-For` and
+`X-Forwarded-Proto` itself. With zfswatcher at the root of the host use
+`rootdir = ""` and `reverse_proxy 127.0.0.1:8081` (nginx: `location / {...}`).
+In both cases the configuration contains:
+
+```
+[www]
+enable = true
+bind = 127.0.0.1:8081
+trustedproxies = 127.0.0.1 ::1
+```
 
 ## Support
 

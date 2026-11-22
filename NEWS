@@ -12,6 +12,9 @@ New features
    pools: 200 "ok" if the last "zpool status" query worked and is not older
    than three times "zpoolstatusrefresh", otherwise 503 with "starting",
    "stale" or "error".
+ - New option "commandtimeout" in section [main]: the time in seconds
+   (1 to 3600, default 60) after which a hanging zpool/zfs command is
+   killed. It is read at startup only.
 
 Fixes
 

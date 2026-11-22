@@ -232,6 +232,15 @@ func locateOff(dev string) error {
 	return nil
 }
 
+// locateKnown reports whether dev is a device with a known LED.
+func locateKnown(dev string) bool {
+	devLedsMutex.Lock()
+	defer devLedsMutex.Unlock()
+
+	_, ok := devLeds[dev]
+	return ok
+}
+
 func locateQuery(dev string) (bool, error) {
 	devLedsMutex.Lock()
 	defer devLedsMutex.Unlock()

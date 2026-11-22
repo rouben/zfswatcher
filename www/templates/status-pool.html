@@ -33,6 +33,7 @@
 				<td>
 				{{ if .EnableLed }}
 				<form action="{{ .Root }}/locate/" method="post" style="margin-bottom: -1px; margin-top: -1px">
+					<input type="hidden" name="return" value="{{ .Return }}">
 					{{ if .Locate }}
 					<input type="hidden" name="dev" value="{{ .Name }}">
 					<input type="hidden" name="state" value="off">

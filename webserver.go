@@ -22,6 +22,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"html/template"
 	"net/http"
 	"sort"
@@ -44,7 +46,12 @@ func noDirListing(h http.Handler) http.HandlerFunc {
 	})
 }
 
-func webServer() {
+// webShutdownTimeout is how long running requests get to finish on shutdown.
+const webShutdownTimeout = 5 * time.Second
+
+// webServer sets up and starts the web server in the background. The returned
+// server can be passed to shutdownWebServer.
+func webServer() *http.Server {
 	var err error
 
 	templates = template.New("zfswatcher").Funcs(template.FuncMap{
@@ -68,14 +75,35 @@ func webServer() {
 		IdleTimeout:       120 * time.Second,
 		MaxHeaderBytes:    64 << 10,
 	}
+	go func() {
+		if err := serveWeb(srv, tlsEnabled); err != nil {
+			notify.Printf(notifier.ERR, "error starting web server: %s", err)
+		}
+	}()
+	return srv
+}
+
+// serveWeb runs srv until it fails or is shut down. A regular shutdown
+// (http.ErrServerClosed) is not an error.
+func serveWeb(srv *http.Server, tlsEnabled bool) error {
+	var err error
 	if tlsEnabled {
 		err = srv.ListenAndServeTLS(cfg.Www.Certfile, cfg.Www.Keyfile)
 	} else {
 		err = srv.ListenAndServe()
 	}
-	if err != nil {
-		notify.Printf(notifier.ERR, "error starting web server: %s", err)
+	if errors.Is(err, http.ErrServerClosed) {
+		return nil
 	}
+	return err
+}
+
+// shutdownWebServer stops accepting new connections and waits up to timeout
+// for running requests to finish.
+func shutdownWebServer(srv *http.Server, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	return srv.Shutdown(ctx)
 }
 
 // newWebHandler builds the complete handler tree of the web interface.

@@ -260,7 +260,7 @@ func setupLeds(state []*PoolType) {
 
 // Print version information.
 func version() {
-	fmt.Println("zfswatcher", VERSION, "- ZFS pool monitoring and notification daemon")
+	fmt.Println("zfswatcher", buildVersion, "- ZFS pool monitoring and notification daemon")
 	fmt.Println("Built with", getGoEnvironment())
 	fmt.Print(`
 Copyright © 2012-2013 Damicon Kraa Oy

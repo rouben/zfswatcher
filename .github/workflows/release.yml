@@ -1,0 +1,101 @@
+name: Release
+
+# A release is created by pushing a tag X.Y.Z (no "v" prefix) on a commit
+# that is already part of master. The workflow builds the packages and
+# creates a DRAFT release; the maintainer publishes it by hand.
+on:
+  push:
+    tags: ['[0-9]+.[0-9]+.[0-9]+']
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed to create the draft release
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check that the tag is on master
+        run: |
+          git fetch origin master
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/master; then
+            echo "::error::Tag $GITHUB_REF_NAME ($GITHUB_SHA) is not contained in origin/master. Fast-forward master to the tagged commit first."
+            exit 1
+          fi
+
+      - name: Check version consistency
+        run: |
+          tag="$GITHUB_REF_NAME"
+          version=$(sed -n 's/^const VERSION = "\(.*\)"$/\1/p' version.go)
+          if [ "$version" != "$tag" ]; then
+            echo "::error::Tag $tag does not match VERSION $version in version.go"
+            exit 1
+          fi
+          head=$(head -n 1 debian/changelog)
+          case "$head" in
+            "zfswatcher ($tag-1) "*) ;;
+            *) echo "::error::Top entry of debian/changelog is not $tag-1: $head"; exit 1 ;;
+          esac
+          if echo "$head" | grep -q UNRELEASED; then
+            echo "::error::Top entry of debian/changelog is still UNRELEASED"
+            exit 1
+          fi
+          if ! grep -q "^version $tag released " NEWS; then
+            echo "::error::NEWS has no 'version $tag released DATE' section"
+            exit 1
+          fi
+
+      - name: Check that no release exists yet
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "::error::A release for $GITHUB_REF_NAME already exists; refusing to touch it."
+            exit 1
+          fi
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Install pre-reqs
+        run: sudo apt-get update && sudo apt-get install -y build-essential rpm dpkg-dev debhelper
+
+      - name: Build ZFSWatcher
+        run: make clean && make
+
+      - name: Build tarball
+        run: make dist
+
+      - name: Build Debian package
+        run: make deb
+
+      - name: Build RPM packages
+        run: make rpm
+
+      - name: Extract release notes from NEWS
+        run: |
+          awk -v t="$GITHUB_REF_NAME" '
+            /^version / { if (on) exit; on = ($2 == t); next }
+            on
+          ' NEWS > "$RUNNER_TEMP/notes.md"
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/notes.md"; then
+            echo "::error::Empty release notes for $GITHUB_REF_NAME"
+            exit 1
+          fi
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
+            --title "zfswatcher $GITHUB_REF_NAME" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            *.deb *.rpm *.tar.*

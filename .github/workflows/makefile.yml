@@ -4,7 +4,7 @@ on:
   push:
     branches: [contrib]
   pull_request:
-    branches: [contrib]
+    branches: [contrib, master]
 
 permissions:
   contents: read
@@ -28,6 +28,16 @@ jobs:
       - name: Install pre-reqs
         run: sudo apt-get update && sudo apt-get install -y build-essential rpm dpkg-dev debhelper
 
+      # Every build of this workflow is a development build with its own version,
+      # e.g. 0.5.0+git20261122153012.a6cae3c. Pull requests get one too (same code
+      # path); their sha is that of the merge commit checked out by Actions.
+      - name: Compute development version
+        run: |
+          base=$(sed -n 's/^const VERSION = "\(.*\)"$/\1/p' version.go)
+          date=$(TZ=UTC git log -1 --format=%cd --date=format-local:%Y%m%d%H%M%S)
+          sha=$(git rev-parse --short HEAD)
+          echo "PKGVERSION=${base}+git${date}.${sha}" >> "$GITHUB_ENV"
+
       - name: Clean build environment
         run: make clean
 
@@ -42,6 +52,21 @@ jobs:
         with:
           name: ZFSWatcher Tarball
           path: '*.tar.*'
+
+      # Prepend a changelog entry in this checkout only; nothing is committed.
+      - name: Add development entry to debian/changelog
+        run: |
+          {
+            echo "zfswatcher (${PKGVERSION}-1) UNRELEASED; urgency=medium"
+            echo
+            echo "  * Development build $(git rev-parse --short HEAD)."
+            echo
+            echo " -- tantefred <147740857+tantefred@users.noreply.github.com>  $(date -R -d "@$(git log -1 --format=%ct)")"
+            echo
+            cat debian/changelog
+          } > "$RUNNER_TEMP/changelog"
+          mv "$RUNNER_TEMP/changelog" debian/changelog
+          head -n 6 debian/changelog
 
       - name: Build Debian package
         run: make deb
@@ -63,14 +88,14 @@ jobs:
           name: ZFSWatcher RPMs
           path: '*.rpm'
 
-      # Only publish from pushes to contrib, never from pull requests.
+      # Only publish from pushes to contrib, never from pull requests or master.
       - name: Publish pre-release
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/contrib'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete latest-dev --cleanup-tag --yes || true
           gh release create latest-dev --prerelease --draft \
-            --target "$GITHUB_SHA" --title "Development Build" \
-            --notes "Automatic development build of $GITHUB_SHA" \
+            --target "$GITHUB_SHA" --title "Development Build $PKGVERSION" \
+            --notes "Automatic development build $PKGVERSION of $GITHUB_SHA" \
             *.rpm *.deb

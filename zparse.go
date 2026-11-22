@@ -122,7 +122,7 @@ type DevEntry struct {
 
 // Parse ZFS zpool status config section and return a tree of the volumes/containers/devices.
 func parseConfstr(confstr string) (devs []*DevEntry, err error) {
-	if confstr == "The configuration cannot be determined." {
+	if strings.TrimSpace(confstr) == "The configuration cannot be determined." {
 		return nil, errors.New("configuration can not be determined")
 	}
 	var prevIndent int

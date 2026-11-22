@@ -257,8 +257,7 @@ func TestParseZpoolStatusConfigUndetermined(t *testing.T) {
 	p := parseSingle(t, "  pool: tank\n state: UNAVAIL\n"+
 		"config:\n\n\tThe configuration cannot be determined.\n\nerrors: No known data errors\n")
 	if len(p.devs) != 0 {
-		t.Skipf("bug: the 'configuration cannot be determined' check in parseConfstr "+
-			"never matches real output (confstr starts with a newline); got devs=%+v", p.devs)
+		t.Errorf("expected no devices, got devs=%+v", p.devs)
 	}
 }
 

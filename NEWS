@@ -3,6 +3,17 @@
                            version history
 
 
+zfswatcher 0.7.0 (unreleased)
+
+New features
+
+ - The web interface has a health check at "<rootdir>/healthz" for monitoring
+   tools such as Uptime Kuma. It needs no login and reveals nothing about
+   pools: 200 "ok" if the last "zpool status" query worked and is not older
+   than three times "zpoolstatusrefresh", otherwise 503 with "starting",
+   "stale" or "error".
+
+
 version 0.6.0 released 2026-11-22
 
 Upgrade notes

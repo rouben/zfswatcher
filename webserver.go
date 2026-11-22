@@ -133,6 +133,9 @@ func newWebHandler(tlsEnabled bool) http.Handler {
 				http.FileServer(
 					http.Dir(cfg.Www.Resourcedir)))))
 
+	// Health check for monitoring tools: deliberately without authentication.
+	mux.HandleFunc(cfg.Www.Rootdir+"/healthz", healthzHandler)
+
 	mux.HandleFunc(cfg.Www.Rootdir+"/", basicAuth(dashboardHandler))
 	mux.HandleFunc(cfg.Www.Rootdir+"/status/", basicAuth(statusHandler))
 	mux.HandleFunc(cfg.Www.Rootdir+"/usage/", basicAuth(usageHandler))
@@ -144,6 +147,36 @@ func newWebHandler(tlsEnabled bool) http.Handler {
 
 	// Reject cross-origin state changing requests (CSRF) for all paths.
 	return securityHeaders(http.NewCrossOriginProtection().Handler(mux), tlsEnabled)
+}
+
+// healthzHandler reports the health of the daemon only (no pool states, no
+// error details): 200 when the last zpool status query succeeded and is not
+// older than three refresh intervals, otherwise 503.
+func healthzHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		w.Header().Set("Allow", "GET, HEAD")
+		http.Error(w, "405 Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	zpoolHealth.mutex.Lock()
+	seen, ok, at := zpoolHealth.seen, zpoolHealth.ok, zpoolHealth.at
+	zpoolHealth.mutex.Unlock()
+
+	code, text := http.StatusOK, "ok"
+	switch {
+	case !seen:
+		code, text = http.StatusServiceUnavailable, "starting"
+	case !ok:
+		code, text = http.StatusServiceUnavailable, "error"
+	case time.Since(at) > 3*time.Duration(cfg.Main.Zpoolstatusrefresh)*time.Second:
+		code, text = http.StatusServiceUnavailable, "stale"
+	}
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(code)
+	if r.Method == http.MethodGet {
+		_, _ = w.Write([]byte(text + "\n"))
+	}
 }
 
 // webCSP restricts the pages to their own origin. Inline styles are still

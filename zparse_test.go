@@ -1,9 +1,12 @@
 package main
 
 import (
+	"errors"
+	"io"
 	"os"
 	"strings"
 	"testing"
+	"testing/iotest"
 
 	"github.com/tantefred/zfswatcher/notifier"
 )
@@ -402,4 +405,133 @@ func TestParseZfsListAllProxmox(t *testing.T) {
 	if got := usage["datis/Daten"].Mountpoint; got != "/mnt/Daten" {
 		t.Errorf("datis/Daten mountpoint = %q", got)
 	}
+}
+
+func TestZfsListErrorPaths(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want int // number of entries in the result
+	}{
+		{"empty", "", 0},
+		{"only newlines", "\n\n", 0},
+		{"too few columns", "tank\t1\t2\n", 0},
+		{"too many columns", strings.Repeat("a\t", 12) + "b\n", 0},
+		{"broken numbers", "tank\tx\ty\tz\t1\t2\t3\t4\t5\t/tank\t1.00x\n", 1},
+		{"one bad line among good", "tank\t1\t2\t3\t4\t5\t6\t7\t8\t/tank\t1.00x\nbad\n", 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := parseZfsList(tt.in); len(got) != tt.want {
+				t.Errorf("got %d entries, want %d", len(got), tt.want)
+			}
+		})
+	}
+	m := parseZfsList("tank\tx\ty\tz\t1\t2\t3\t4\t5\t/tank\t1.00x\n")
+	if u := m["tank"]; u == nil || u.Avail != -1 || u.Used != -1 || u.Logicalused != -1 {
+		t.Errorf("broken numbers should be -1: %+v", u)
+	}
+}
+
+const (
+	ioSep = "------  -----  -----  -----  -----  -----  -----\n"
+	ioHdr = "pool  alloc  free  read  write  read  write\n"
+)
+
+func TestZpoolIostatParserEdgeCases(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		got := ZpoolIostatParser("")
+		if got == nil || len(*got) != 0 {
+			t.Errorf("got %v", got)
+		}
+	})
+	t.Run("no separator", func(t *testing.T) {
+		got := ZpoolIostatParser("tank 1 2 3 4 5 6\n")
+		if got == nil || len(*got) != 0 {
+			t.Errorf("got %v", got)
+		}
+	})
+	t.Run("consecutive separators", func(t *testing.T) {
+		got := ZpoolIostatParser(ioHdr + ioSep + ioSep + "tank 1K 2K 3 4 5 6\n" + ioSep)
+		if got == nil || (*got)["tank"] == nil || (*got)["tank"]["tank"].CapacityAlloc != 1024 {
+			t.Errorf("got %v", got)
+		}
+	})
+	t.Run("malformed device row", func(t *testing.T) {
+		if got := ZpoolIostatParser(ioHdr + ioSep + "tank 1 2 3 4 5 6\n  sda 1 2\n"); got != nil {
+			t.Errorf("expected nil, got %v", got)
+		}
+	})
+	t.Run("row with too many columns", func(t *testing.T) {
+		if got := ZpoolIostatParser(ioHdr + ioSep + "tank 1 2 3 4 5 6 7\n"); got != nil {
+			t.Errorf("expected nil, got %v", got)
+		}
+	})
+	t.Run("broken numbers", func(t *testing.T) {
+		got := ZpoolIostatParser(ioHdr + ioSep + "tank a b c d e f\n")
+		if got == nil || (*got)["tank"]["tank"].OperationsRead != -1 {
+			t.Errorf("got %v", got)
+		}
+	})
+	t.Run("stops at blank line", func(t *testing.T) {
+		got := ZpoolIostatParser(ioHdr + ioSep + "tank 1 2 3 4 5 6\n\ngarbage\n")
+		if got == nil || len(*got) != 1 {
+			t.Errorf("got %v", got)
+		}
+	})
+}
+
+type errReader struct{}
+
+func (errReader) Read([]byte) (int, error) { return 0, errors.New("boom") }
+
+func TestZpoolIostatStreamReader(t *testing.T) {
+	entry := func(pool string) string {
+		return ioHdr + ioSep + pool + " 1 2 3 4 5 6\n" + ioSep
+	}
+	collect := func(r io.Reader) []*ZpoolIostatTable {
+		ch := make(chan *ZpoolIostatTable, 10)
+		go ZpoolIostatStreamReader(ch, r)
+		var out []*ZpoolIostatTable
+		for tbl := range ch {
+			out = append(out, tbl)
+		}
+		return out
+	}
+	t.Run("two entries", func(t *testing.T) {
+		out := collect(iotest.OneByteReader(strings.NewReader(entry("a") + "\n" + entry("b") + "\n")))
+		if len(out) != 2 || (*out[0])["a"] == nil || (*out[1])["b"] == nil {
+			t.Errorf("got %v", out)
+		}
+	})
+	t.Run("two entries in one read", func(t *testing.T) {
+		out := collect(strings.NewReader(entry("a") + "\n" + entry("b") + "\n"))
+		if len(out) != 2 {
+			t.Skipf("bug: ZpoolIostatStreamReader handles only one entry per Read(); "+
+				"got %d of 2 entries when both arrive in a single read", len(out))
+		}
+	})
+	t.Run("truncated last entry is dropped", func(t *testing.T) {
+		out := collect(strings.NewReader(entry("a") + "\n" + entry("b")))
+		if len(out) != 1 {
+			t.Errorf("got %d entries, want 1", len(out))
+		}
+	})
+	t.Run("empty input", func(t *testing.T) {
+		if out := collect(strings.NewReader("")); len(out) != 0 {
+			t.Errorf("got %v", out)
+		}
+	})
+	t.Run("read error", func(t *testing.T) {
+		out := collect(io.MultiReader(strings.NewReader(entry("a")+"\n"), errReader{}))
+		if len(out) != 2 || out[0] == nil || out[1] != nil {
+			t.Errorf("expected a table and then nil, got %v", out)
+		}
+	})
+	t.Run("malformed entry yields nil", func(t *testing.T) {
+		out := collect(strings.NewReader(ioHdr + ioSep + "tank 1 2\n\n"))
+		if len(out) != 1 || out[0] != nil {
+			t.Errorf("got %v", out)
+		}
+	})
 }

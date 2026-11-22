@@ -1,0 +1,9 @@
+# Built with CGO_ENABLED=0 on purpose: a cgo build crashed with "Illegal
+# instruction" on CPUs without AVX.
+zfswatcher: statically-linked-binary [usr/sbin/zfswatcher]
+# The web assets are bundled in the exact versions the templates are tested
+# with; switching to libjs-jquery/libjs-bootstrap is planned.
+zfswatcher: embedded-javascript-library * [usr/share/zfswatcher/www/resources/bootstrap/js/jquery.min.js]
+# The license must stay next to the bundled Bootstrap files.
+zfswatcher: extra-license-file [usr/share/zfswatcher/www/resources/bootstrap/LICENSE]
+zfswatcher: package-contains-documentation-outside-usr-share-doc [usr/share/zfswatcher/www/resources/bootstrap/LICENSE]

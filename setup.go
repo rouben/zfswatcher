@@ -54,6 +54,7 @@ type cfgType struct {
 		Zfslistusagecmd    string
 		Zpooliostatcmd     string
 		Pidfile            string
+		Statefile          string
 	}
 	Severity struct {
 		Poolstatemap             stateToSeverityMap
@@ -275,6 +276,7 @@ func getCfg() *cfgType {
 	c.Main.Zfslistrefresh = 60
 	c.Main.Zfslistcmd = "zfs list -H -o name,avail,used,logicalused,usedsnap,usedds,usedrefreserv,usedchild,refer,mountpoint,compressratio -d 0"
 	c.Main.Zfslistusagecmd = "zfs list -H -o name,avail,used,logicalused,usedsnap,usedds,usedrefreserv,usedchild,refer,mountpoint,compressratio -r -t all"
+	c.Main.Statefile = defaultStatefile
 	c.Leds.Ledctlcmd = "ledctl"
 	// Without this the web server would listen on port 80.
 	c.Www.Bind = defaultWwwBind

@@ -200,6 +200,38 @@ or submit a pull request on GitHub. Development happens on the `contrib`
 branch.
 
 
+## Releases and branches
+
+- `contrib` is the development branch and the target of pull requests. Every
+  push to it builds the draft pre-release `latest-dev`. Its packages and
+  binary carry a development version of the form
+  `X.Y.Z+gitYYYYMMDDhhmmss.<sha>` (e.g. `0.5.0+git20261122153012.a6cae3c`, Debian
+  revision `-1`), which sorts after the release `X.Y.Z` and before the next one.
+- `master` contains released states only. It is only ever fast-forwarded to
+  `contrib`.
+- Hotfix for a released version: branch from `master`, open a pull request
+  against `master`, release from there, then merge `master` back into
+  `contrib`.
+
+Release steps for the maintainer:
+
+1. On a branch from `contrib`, set the new version in `version.go`, add a
+   `X.Y.Z-1` entry (not `UNRELEASED`) at the top of `debian/changelog` and a
+   `version X.Y.Z released YYYY-MM-DD` section at the top of `NEWS`. The RPM
+   takes its version from `version.go`, so `zfswatcher.spec` only needs a
+   change if the packaging itself changed. Open a pull request against
+   `contrib` and merge it.
+2. Fast-forward `master` to `contrib`:
+   `git switch master && git merge --ff-only contrib && git push origin master`.
+3. Tag the commit on `master` without a `v` prefix and push the tag:
+   `git tag X.Y.Z && git push origin X.Y.Z`.
+4. The `Release` workflow checks that the tag is on `master`, that it matches
+   `version.go` and `debian/changelog`, builds the tarball, `.deb` and `.rpm`
+   packages and creates a draft release with the matching section of `NEWS`
+   as release notes. It never overwrites an existing release.
+5. Review the draft on GitHub and publish it by hand.
+
+
 ## Credits
 
 - Janne Snabb <snabb@epipe.com> - original author

@@ -44,7 +44,7 @@ with the following main features:
 
 
 %build
-make
+make PKGVERSION=%{version}
 
 
 %install

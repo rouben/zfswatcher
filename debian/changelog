@@ -13,6 +13,10 @@ zfswatcher (0.6.0-1) UNRELEASED; urgency=medium
     XSS issues) and jQuery 3.2.1 to 3.7.1.
   * Correct debian/copyright for the bundled files (Bootstrap and jQuery
     are MIT licensed).
+  * Store web passwords as bcrypt hashes: "zfswatcher -P" reads the password
+    without echo and prints a bcrypt hash. MD5 crypt hashes still work but
+    log a deprecation warning at startup. Replace the unmaintained
+    github.com/abbot/go-http-auth with a built-in Basic authentication.
 
  -- tantefred <147740857+tantefred@users.noreply.github.com>  Sun, 22 Nov 2026 12:00:00 +0100
 

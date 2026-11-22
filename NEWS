@@ -5,6 +5,16 @@
 
 version 0.6.0 (unreleased)
 
+ - Web passwords are now stored as bcrypt hashes ("$2y$..."). "zfswatcher -P"
+   reads the password without echo (twice on a terminal, one line from
+   stdin otherwise) and prints a bcrypt hash; the example configuration uses
+   a bcrypt hash of "toor". Existing MD5 crypt hashes ("$1$...") keep
+   working, but zfswatcher logs a warning at startup for each such user;
+   create a new hash with "zfswatcher -P". The unmaintained
+   github.com/abbot/go-http-auth is no longer used: HTTP Basic
+   authentication is built in, and unknown or disabled users take as much
+   time to reject as wrong passwords.
+
  - Web interface hardening: the HTTP server has timeouts and a header size
    limit, all responses carry security headers (Content-Security-Policy,
    X-Frame-Options, X-Content-Type-Options, Referrer-Policy, and HSTS with

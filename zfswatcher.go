@@ -30,6 +30,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
@@ -322,6 +323,7 @@ func main() {
 	notify.Print(notifier.INFO, "zfswatcher starting")
 
 	var statusTicker, zfslistTicker *time.Ticker
+	var webSrv *http.Server
 
 	// get the initial zpool status:
 	out, err := getCommandOutput(cfg.Main.Zpoolstatuscmd)
@@ -374,7 +376,7 @@ func main() {
 
 	// start a web server goroutine:
 	if cfg.Www.Enable {
-		go webServer()
+		webSrv = webServer()
 	}
 
 	// initialize ticker timers and go in main loop:
@@ -440,6 +442,13 @@ MAINLOOP:
 	zfslistTicker.Stop()
 EXIT:
 	notify.Print(notifier.INFO, "zfswatcher stopping")
+
+	// stop the web server first: finish running requests, accept no new ones.
+	if webSrv != nil {
+		if err := shutdownWebServer(webSrv, webShutdownTimeout); err != nil {
+			notify.Printf(notifier.ERR, "error stopping web server: %s", err)
+		}
+	}
 
 	if iostat.process != nil {
 		// Stop returns the "killed" error by design, see its comment.

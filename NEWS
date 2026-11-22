@@ -13,6 +13,10 @@ New features
    than three times "zpoolstatusrefresh", otherwise 503 with "starting",
    "stale" or "error".
 
+Fixes
+
+ - The web server now shuts down gracefully on SIGTERM/SIGINT: running
+   requests get up to 5 seconds to finish and no new ones are accepted.
 
 version 0.6.0 released 2026-11-22
 

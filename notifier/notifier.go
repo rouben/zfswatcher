@@ -117,7 +117,7 @@ func New() *Notifier {
 
 func sanitizeMessageText(str string) string {
 	// XXX: how about other control characters?
-	return strings.Replace(str, "\n", " ", -1)
+	return strings.ReplaceAll(str, "\n", " ")
 }
 
 func (n *Notifier) internal_send(msgtype MsgType, s Severity, t string) error {
@@ -184,11 +184,12 @@ func (n *Notifier) Close() chan bool {
 
 // Printf is normal fmt.Printf which sends a log message.
 func (n *Notifier) Printf(s Severity, format string, v ...interface{}) {
-	n.Send(s, fmt.Sprintf(format, v...))
+	// Send only fails for an invalid severity, which is a programming error.
+	_ = n.Send(s, fmt.Sprintf(format, v...))
 }
 
 // Print is normal fmt.Print which sends a log message.
-func (n *Notifier) Print(s Severity, v ...interface{}) { n.Send(s, fmt.Sprint(v...)) }
+func (n *Notifier) Print(s Severity, v ...interface{}) { _ = n.Send(s, fmt.Sprint(v...)) } // see Printf
 
 // func (n *Notifier) Println(s Severity, v ...interface{}) { n.Send(s, fmt.Sprintln(v...)) }
 

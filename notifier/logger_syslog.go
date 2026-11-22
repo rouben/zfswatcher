@@ -96,7 +96,7 @@ func (n *Notifier) loggerSyslog(ch chan *Msg, address string, facility SyslogFac
 					}
 					checkInternalError("error writing to syslog socket", err)
 					// try to reopen the socket if there was error:
-					c.Close()
+					_ = c.Close() // socket is broken already
 					connected = false
 				}
 				c, sep, err = connectSyslog(address)
@@ -106,7 +106,7 @@ func (n *Notifier) loggerSyslog(ch chan *Msg, address string, facility SyslogFac
 			}
 		case MSGTYPE_REOPEN:
 			if connected {
-				c.Close()
+				_ = c.Close() // reconnecting anyway
 				connected = false
 			}
 			c, sep, err = connectSyslog(address)
@@ -116,7 +116,7 @@ func (n *Notifier) loggerSyslog(ch chan *Msg, address string, facility SyslogFac
 		}
 	}
 	if connected {
-		c.Close()
+		_ = c.Close() // shutting down
 	}
 }
 

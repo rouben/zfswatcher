@@ -3,6 +3,15 @@
                            version history
 
 
+version 0.7.0 (unreleased)
+
+Changes
+
+ - New option "commandtimeout" in section [main]: the time in seconds
+   (1 to 3600, default 60) after which a hanging zpool/zfs command is
+   killed. It is read at startup only.
+
+
 version 0.6.0 released 2026-11-22
 
 Upgrade notes

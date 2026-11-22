@@ -1,7 +1,5 @@
 github.com/abbot/go-http-auth v0.4.0 h1:QjmvZ5gSC7jm3Zg54DqWE/T5m1t2AfDu6QlXJT0EVT0=
 github.com/abbot/go-http-auth v0.4.0/go.mod h1:Cz6ARTIzApMJDzh5bRMSUou6UMSp0IEXg9km/ci7TJM=
-github.com/snabb/smtp v0.0.0-20121217205420-e57cc72f569f h1:uPninjGqASfO+VgebmjM2/kFHhvEP8rdjR2cTGncx/o=
-github.com/snabb/smtp v0.0.0-20121217205420-e57cc72f569f/go.mod h1:oSfYRED7cfdASeh+h8v3eqxL8SVN2TyqCVxPugT0uYE=
 github.com/spf13/pflag v1.1.0 h1:6W6MbVUrnMb8PEhjkqwsVLY7ryuzRfFHF4mQd7L94ag=
 github.com/spf13/pflag v1.1.0/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 golang.org/x/crypto v0.59.0 h1:xS2jhqYbzNrpvkWP2YTDf4TJwBy3ykR03i8vFDxEc7c=

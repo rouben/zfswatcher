@@ -3,8 +3,14 @@
                            version history
 
 
-version 0.6.0 (unreleased)
+version 0.6.0 UNRELEASED
 
+ - E-mail notifications use the standard library net/smtp instead of the
+   unmaintained github.com/snabb/smtp. STARTTLS is used when the server
+   offers it, connections time out after 30 seconds, and the messages now
+   carry Message-ID, MIME-Version and UTF-8 headers (non-ASCII subjects are
+   encoded). The configuration is unchanged.
+   
  - Bundled web assets updated: Bootstrap 3.3.7 -> 3.4.1 (fixes several XSS
    issues, CVE-2018-14040, CVE-2018-14042, CVE-2019-8331) and jQuery
    3.2.1 -> 3.7.1. The bundled Bootstrap license file is now the

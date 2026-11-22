@@ -22,32 +22,133 @@
 package notifier
 
 import (
+	"crypto/rand"
+	"crypto/tls"
+	"encoding/hex"
 	"errors"
+	"fmt"
+	"mime"
 	"net"
+	"net/mail"
+	"net/smtp"
 	"os"
 	"strings"
 	"time"
-
-	"github.com/snabb/smtp"
 )
+
+// smtpTimeout limits connecting to and talking with the mail server, so a
+// hanging server cannot block the daemon (variable so tests can shorten it).
+var smtpTimeout = 30 * time.Second
+
+// buildEmailMessage assembles an RFC 5322 message. Header values containing
+// CR or LF are rejected to prevent header injection.
+func buildEmailMessage(from, to, subject, text string, now time.Time) ([]byte, error) {
+	for _, v := range []string{from, to, subject} {
+		if strings.ContainsAny(v, "\r\n") {
+			return nil, errors.New("line break in mail header value")
+		}
+	}
+	domain, _ := os.Hostname()
+	if i := strings.LastIndex(from, "@"); i >= 0 {
+		domain = strings.Trim(from[i+1:], "<> ")
+	}
+	if domain == "" {
+		domain = "localhost"
+	}
+	var rnd [8]byte
+	_, _ = rand.Read(rnd[:])
+	msgID := fmt.Sprintf("<%d.%s@%s>", now.UnixNano(), hex.EncodeToString(rnd[:]), domain)
+
+	text = strings.ReplaceAll(text, "\r\n", "\n")
+	text = strings.ReplaceAll(text, "\n", "\r\n")
+	msg := "From: " + from + "\r\n" +
+		"To: " + strings.Join(strings.Fields(to), ", ") + "\r\n" +
+		"Date: " + now.Format(time.RFC1123Z) + "\r\n" +
+		"Message-ID: " + msgID + "\r\n" +
+		"Subject: " + mime.QEncoding.Encode("utf-8", subject) + "\r\n" +
+		"MIME-Version: 1.0\r\n" +
+		"Content-Type: text/plain; charset=UTF-8\r\n" +
+		"Content-Transfer-Encoding: 8bit\r\n" +
+		"\r\n" + text + "\r\n"
+	return []byte(msg), nil
+}
+
+// sendMailSMTP delivers one message. STARTTLS is used when the server
+// offers it; PLAIN authentication (if username is set) is only sent over
+// TLS or to localhost, which net/smtp enforces.
+func sendMailSMTP(server, username, password, from string, rcpt []string, msg []byte) error {
+	host, _, err := net.SplitHostPort(server)
+	if err != nil {
+		return fmt.Errorf("error parsing mail host:port: %w", err)
+	}
+	conn, err := (&net.Dialer{Timeout: smtpTimeout}).Dial("tcp", server)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = conn.Close() }()
+	_ = conn.SetDeadline(time.Now().Add(smtpTimeout))
+
+	c, err := smtp.NewClient(conn, host)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = c.Close() }()
+
+	if err = c.Hello(localHostname()); err != nil {
+		return err
+	}
+	if ok, _ := c.Extension("STARTTLS"); ok {
+		if err = c.StartTLS(&tls.Config{ServerName: host}); err != nil {
+			return err
+		}
+	}
+	if username != "" {
+		if err = c.Auth(smtp.PlainAuth("", username, password, host)); err != nil {
+			return err
+		}
+	}
+	envFrom := from
+	if a, perr := mail.ParseAddress(from); perr == nil {
+		envFrom = a.Address
+	}
+	if err = c.Mail(envFrom); err != nil {
+		return err
+	}
+	for _, r := range rcpt {
+		if err = c.Rcpt(r); err != nil {
+			return err
+		}
+	}
+	w, err := c.Data()
+	if err != nil {
+		return err
+	}
+	if _, err = w.Write(msg); err != nil {
+		return err
+	}
+	if err = w.Close(); err != nil {
+		return err
+	}
+	return c.Quit()
+}
+
+func localHostname() string {
+	if h, err := os.Hostname(); err == nil && h != "" && !strings.ContainsAny(h, " \t") {
+		return h
+	}
+	return "localhost"
+}
 
 func (n *Notifier) sendEmailSMTP(server, username, password, from, to, subject, text string) {
 	defer n.wg.Done()
-	var auth smtp.Auth
 
-	text = "From: " + from + "\r\n" +
-		"To: " + strings.Join(strings.Fields(to), ", ") + "\r\n" +
-		"Date: " + time.Now().Format(time.RFC1123Z) + "\r\n" +
-		"Subject: " + subject + "\r\n" +
-		"\r\n" + strings.ReplaceAll(text, "\n", "\r\n") + "\r\n"
-
-	if username != "" {
-		host, _, err := net.SplitHostPort(server)
-		checkInternalError("error parsing mail host:port", err)
-		auth = smtp.PlainAuth("", username, password, host)
+	msg, err := buildEmailMessage(from, to, subject, text, time.Now())
+	if err != nil {
+		checkInternalError("error building mail (giving up)", err)
+		return
 	}
 	for retries := 0; true; retries++ {
-		err := smtp.SendMail(server, auth, from, strings.Fields(to), []byte(text))
+		err := sendMailSMTP(server, username, password, from, strings.Fields(to), msg)
 		if err == nil {
 			break
 		}

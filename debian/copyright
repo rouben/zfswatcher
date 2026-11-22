@@ -26,7 +26,6 @@ License: GPL-3.0+
 #  - github.com/abbot/go-http-auth  2012-2013 Lev Shamardin, Apache-2.0
 #  - gopkg.in/gcfg.v1               2012 Péter Surányi, 2009 The Go Authors, BSD-3-clause
 #  - github.com/spf13/pflag         2012 Alex Ogier, 2012 The Go Authors, BSD-3-clause
-#  - github.com/snabb/smtp          2012, upstream ships no license file (to be replaced)
 
 # Bootstrap 3.4.1 and jQuery 3.7.1 (bundled, minified)
 Files: www/resources/bootstrap/js/bootstrap.min.js

@@ -3,6 +3,7 @@ package main
 import (
 	"net"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"testing"
@@ -38,5 +39,41 @@ func TestSampleConfigsBind(t *testing.T) {
 			continue
 		}
 		unprivilegedPort(t, string(m[1]))
+	}
+}
+
+func TestCheckCommandTimeout(t *testing.T) {
+	for _, c := range []struct {
+		sec int
+		ok  bool
+	}{{0, false}, {-1, false}, {1, true}, {60, true}, {3600, true}, {3601, false}} {
+		if err := checkCommandTimeout(c.sec); (err == nil) != c.ok {
+			t.Errorf("checkCommandTimeout(%d) = %v, ok want %v", c.sec, err, c.ok)
+		}
+	}
+}
+
+func cfgWithMain(t *testing.T, body string) *cfgType {
+	t.Helper()
+	old := cfgFile
+	t.Cleanup(func() { cfgFile = old })
+	cfgFile = filepath.Join(t.TempDir(), "z.conf")
+	if err := os.WriteFile(cfgFile, []byte("[main]\n"+body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return getCfg()
+}
+
+func TestGetCfgCommandTimeout(t *testing.T) {
+	if c := cfgWithMain(t, ""); c == nil || c.Main.Commandtimeout != 60 {
+		t.Errorf("default: got %+v, want 60", c)
+	}
+	if c := cfgWithMain(t, "commandtimeout = 120\n"); c == nil || c.Main.Commandtimeout != 120 {
+		t.Errorf("valid value: got %+v, want 120", c)
+	}
+	for _, v := range []string{"0", "3601", "-5"} {
+		if cfgWithMain(t, "commandtimeout = "+v+"\n") != nil {
+			t.Errorf("getCfg accepted commandtimeout = %s", v)
+		}
 	}
 }

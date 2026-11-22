@@ -232,6 +232,10 @@ Release steps for the maintainer:
 5. Review the draft on GitHub and publish it by hand.
 
 
+## Security
+
+Please report vulnerabilities privately, see [SECURITY.md](SECURITY.md).
+
 ## Credits
 
 - Janne Snabb <snabb@epipe.com> - original author

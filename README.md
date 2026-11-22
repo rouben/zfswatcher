@@ -203,7 +203,10 @@ branch.
 ## Releases and branches
 
 - `contrib` is the development branch and the target of pull requests. Every
-  push to it builds the draft pre-release `latest-dev`.
+  push to it builds the draft pre-release `latest-dev`. Its packages and
+  binary carry a development version of the form
+  `X.Y.Z+gitYYYYMMDD.<sha>` (e.g. `0.5.0+git20261122.a6cae3c`, Debian
+  revision `-1`), which sorts after the release `X.Y.Z` and before the next one.
 - `master` contains released states only. It is only ever fast-forwarded to
   `contrib`.
 - Hotfix for a released version: branch from `master`, open a pull request

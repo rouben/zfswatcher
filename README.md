@@ -177,6 +177,15 @@ Some notes:
   `zfswatcher.conf`. The proxy passes the login of the built-in HTTP
   authentication on; put TLS on the proxy.
 
+- Health check: `GET <rootdir>/healthz` (for example `/healthz`, or
+  `/zfswatcher/healthz` with the nginx example above) needs no login, so
+  monitoring tools such as Uptime Kuma can poll it. It only reports the state
+  of the daemon, never pool states or error messages: `200 ok` if the last
+  `zpool status` query succeeded and is not older than three times
+  `zpoolstatusrefresh`, otherwise `503` with `starting`, `stale` or `error`.
+  Only GET and HEAD are allowed. Since it is unauthenticated, expose it only
+  where that is acceptable.
+
 - If you change the default web interface templates, it is best to copy them
   from `/usr/share/zfswatcher/www` to another location and change the
   `templatedir` and `resourcedir` settings in the configuration accordingly.

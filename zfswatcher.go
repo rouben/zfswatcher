@@ -55,6 +55,23 @@ var iostat struct {
 	ch      chan *ZpoolIostatTable
 }
 
+// zpoolHealth remembers the outcome of the most recent zpool status query
+// for the /healthz endpoint of the web interface.
+var zpoolHealth struct {
+	mutex sync.Mutex
+	seen  bool // a query was made at all
+	ok    bool // command ran and its output was parsed
+	at    time.Time
+}
+
+// recordZpoolQuery stores the result of a zpool status query (command and
+// parser both succeeded when ok is true).
+func recordZpoolQuery(ok bool, at time.Time) {
+	zpoolHealth.mutex.Lock()
+	zpoolHealth.seen, zpoolHealth.ok, zpoolHealth.at = true, ok, at
+	zpoolHealth.mutex.Unlock()
+}
+
 var startTime time.Time
 
 var hostname string
@@ -317,6 +334,7 @@ func main() {
 		notify.Print(notifier.CRIT, "exiting, parsing ZFS status failed")
 		goto EXIT
 	}
+	recordZpoolQuery(true, time.Now())
 	out, err = getCommandOutput(cfg.Main.Zfslistcmd)
 	if err != nil {
 		notify.Print(notifier.CRIT, "exiting, getting ZFS disk usage failed")
@@ -372,14 +390,17 @@ MAINLOOP:
 		case <-statusTicker.C:
 			zpoolStatusOutput, err := getCommandOutput(cfg.Main.Zpoolstatuscmd)
 			if err != nil {
+				recordZpoolQuery(false, time.Now())
 				notify.Print(notifier.CRIT, "getting ZFS status failed")
 				continue
 			}
 			newstate, err := parseZpoolStatus(zpoolStatusOutput)
 			if err != nil {
+				recordZpoolQuery(false, time.Now())
 				notify.Print(notifier.CRIT, "parsing ZFS status failed")
 				continue
 			}
+			recordZpoolQuery(true, time.Now())
 			checkZpoolStatus(currentState.state, newstate)
 			currentState.mutex.Lock()
 			currentState.state = newstate

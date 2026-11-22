@@ -71,26 +71,8 @@
         </tbody>
       </table>
 
-      <script type="text/javascript">
-        var drive1 = [
-          {{range .Drives1}}
-            {{.}},
-          {{end}}
-        ];
-        var drive2 = [
-          {{range .Drives2}}
-            {{.}},
-          {{end}}
-        ];
-        for (i = 0; i < 24; i++) {
-          $("#drive1-"+[i+1]).append("<span class=is"+drive1[i].State+"><kbd>"+drive1[i].Name+"</kbd></span>");
-          $("#drive1-"+[i+1]).addClass("is"+drive1[i].State);
-        };
-        for (i = 0; i < 21; i++) {
-          $("#drive2-"+[i+1]).append("<span class=is"+drive2[i].State+"><kbd>"+drive2[i].Name+"</kbd></span>");
-          $("#drive2-"+[i+1]).addClass("is"+drive2[i].State);
-        };
-    </script>
+      <script type="application/json" id="enclosure-drives">{{ .EnclosureData }}</script>
+      <script src="{{ $.Nav.Root }}/resources/enclosure.js"></script>
     {{ end }}
     {{ if .Chassis45drives60 }}
       <h3 align="center">45Drives XL60</h3>
